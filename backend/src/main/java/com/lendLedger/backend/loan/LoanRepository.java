@@ -158,6 +158,35 @@ class LoanRepository {
     }
 
     // ------------------------------------------------------------------ writes
+    /** Locks the loan row until the transaction ends, so payments on one loan are processed one at a time (ADR-03). */
+    Optional<LoanRow> lockById(UUID tenantId, UUID id) {
+        return jdbc.sql(LOAN_SELECT + " WHERE l.tenant_id = :tenant AND l.id = :id FOR UPDATE OF l")
+                .param("tenant", tenantId)
+                .param("id", id)
+                .query(LoanRepository::mapLoan)
+                .optional();
+    }
+
+    void markSettled(UUID tenantId, UUID loanId, LocalDate on) {
+        jdbc.sql("""
+                        UPDATE loan SET status = 'COMPLETED', settled_on = :on
+                        WHERE tenant_id = :tenant AND id = :id AND status = 'ACTIVE'
+                        """)
+                .param("on", on)
+                .param("tenant", tenantId)
+                .param("id", loanId)
+                .update();
+    }
+
+    void reopen(UUID tenantId, UUID loanId) {
+        jdbc.sql("""
+                        UPDATE loan SET status = 'ACTIVE', settled_on = NULL
+                        WHERE tenant_id = :tenant AND id = :id AND status = 'COMPLETED'
+                        """)
+                .param("tenant", tenantId)
+                .param("id", loanId)
+                .update();
+    }
 
     void insertLoan(UUID id, UUID tenantId, UUID borrowerId, UUID productId, UUID ruleVersionId,
                     BigDecimal principal, String currency, LocalDate issueDate, int termPeriods,
@@ -188,7 +217,8 @@ class LoanRepository {
         jdbc.sql("""
                         INSERT INTO charge_event (tenant_id, loan_id, charge_type, period_kind, period_number,
                                                   effective_date, amount, rule_version_id)
-                        VALUES (:tenant, :loan, :type, :kind, :period, :effective, :amount, :rule)
+                       VALUES (:tenant, :loan, :type, :kind, :period, :effective, :amount, :rule)
+                        ON CONFLICT (loan_id, charge_type, period_kind, period_number) DO NOTHING
                         """)
                 .param("tenant", tenantId)
                 .param("loan", loanId)
