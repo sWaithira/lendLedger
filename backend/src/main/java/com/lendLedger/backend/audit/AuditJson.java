@@ -3,11 +3,11 @@ package com.lendLedger.backend.audit;
 import java.util.Map;
 
 /** Builds a small JSON object from string pairs, so audit details can be stored in the jsonb column. */
-final class AuditJson {
+public final class AuditJson {
 
-    private AuditJson() { }
+    public AuditJson() { }
 
-    static String toJson(Map<String, String> values) {
+    public static String toJson(Map<String, String> values) {
         if (values == null || values.isEmpty()) return "{}";
         StringBuilder sb = new StringBuilder("{");
         boolean first = true;
