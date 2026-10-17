@@ -18,11 +18,15 @@ public class TenantClock {
         this.jdbc = jdbc;
     }
 
-    public LocalDate today() {
+    public ZoneId zone() {
         String zone = jdbc.sql("SELECT timezone FROM tenant WHERE id = :id")
                 .param("id", CurrentUser.tenantId())
                 .query(String.class)
                 .single();
-        return LocalDate.now(ZoneId.of(zone));
+        return ZoneId.of(zone);
+    }
+
+    public LocalDate today() {
+        return LocalDate.now(zone());
     }
 }
