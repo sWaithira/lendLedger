@@ -157,7 +157,7 @@ public class LoanService {
         }
     }
 
-    private LoanDtos.LoanView toView(LoanRow row, Map<BalanceComponent, BigDecimal> allocated, LocalDate today) {
+     LoanDtos.LoanView toView(LoanRow row, Map<BalanceComponent, BigDecimal> allocated, LocalDate today) {
         LoanTerms terms = row.terms();
         // Accrual stops on the settlement date (ADR-01).
         LocalDate asOf = (row.settledOn() != null && row.settledOn().isBefore(today)) ? row.settledOn() : today;
