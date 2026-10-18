@@ -158,6 +158,35 @@ class LoanRepository {
     }
 
     // ------------------------------------------------------------------ writes
+
+    /** All loans of the tenant, optionally only one stored status (null = every status), earliest due date first. */
+    List<LoanRow> listByStatus(UUID tenantId, String status) {
+        Map<String, Object> params = new HashMap<>();
+        String where = filter(tenantId, null, status, params);
+        return jdbc.sql(LOAN_SELECT + where + " ORDER BY l.due_date, l.id")
+                .params(params)
+                .query(LoanRepository::mapLoan)
+                .list();
+    }
+
+    /** Net allocations for every loan of the tenant in one query (used by reports). */
+    Map<UUID, Map<BalanceComponent, BigDecimal>> allocatedNetAll(UUID tenantId) {
+        Map<UUID, Map<BalanceComponent, BigDecimal>> result = new HashMap<>();
+        List<AllocationSum> sums = jdbc.sql("""
+                        SELECT loan_id, component, SUM(amount) AS total
+                        FROM payment_allocation
+                        WHERE tenant_id = :tenant
+                        GROUP BY loan_id, component
+                        """)
+                .param("tenant", tenantId)
+                .query((rs, n) -> new AllocationSum(rs.getObject("loan_id", UUID.class),
+                        BalanceComponent.valueOf(rs.getString("component")), rs.getBigDecimal("total")))
+                .list();
+        for (AllocationSum s : sums) {
+            result.computeIfAbsent(s.loanId(), k -> new EnumMap<>(BalanceComponent.class)).put(s.component(), s.total());
+        }
+        return result;
+    }
     /** Locks the loan row until the transaction ends, so payments on one loan are processed one at a time (ADR-03). */
     Optional<LoanRow> lockById(UUID tenantId, UUID id) {
         return jdbc.sql(LOAN_SELECT + " WHERE l.tenant_id = :tenant AND l.id = :id FOR UPDATE OF l")
