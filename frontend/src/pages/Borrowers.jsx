@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api, describeError } from '../api.js'
 import { useAuth } from '../auth.jsx'
-import { Button, Empty, ErrorNote, Field, Loading, PageHead, Segmented, Sheet } from '../components/ui.jsx'
+import { Button, Empty, ErrorNote, Field, Loading, PageHead, Segmented, Sheet, ViewToggle } from '../components/ui.jsx'
 import { initials } from '../format.js'
-import { useDebounced, useFetch } from '../hooks.js'
+import { useDebounced, useFetch, useStoredState } from '../hooks.js'
 
 const PAGE_SIZE = 12
 
@@ -15,6 +15,7 @@ export default function Borrowers() {
     const [status, setStatus] = useState('ACTIVE')
     const [page, setPage] = useState(0)
     const [creating, setCreating] = useState(false)
+    const [view, setView] = useStoredState('view:borrowers', 'list')
     const term = useDebounced(q)
     const { data, error, loading, reload } = useFetch(
         `/api/v1/borrowers?status=${status}&page=${page}&size=${PAGE_SIZE}&q=${encodeURIComponent(term)}`,
@@ -57,6 +58,7 @@ export default function Borrowers() {
                         { value: 'ARCHIVED', label: 'Archived' },
                     ]}
                 />
+                <ViewToggle value={view} onChange={setView} />
             </div>
 
             <ErrorNote error={error} onRetry={reload} />
@@ -70,22 +72,36 @@ export default function Borrowers() {
             )}
             {data && data.items.length > 0 && (
                 <>
-                    <div className="list">
-                        {data.items.map((b) => (
-                            <Link key={b.id} to={`/borrowers/${b.id}`} className="row">
-                                <div className="avatar" aria-hidden="true">
-                                    {initials(b.fullName)}
-                                </div>
-                                <div className="grow">
+                    {view === 'cards' ? (
+                        <div className="cards">
+                            {data.items.map((b) => (
+                                <Link key={b.id} to={`/borrowers/${b.id}`} className="card-item card-person">
+                                    <div className="avatar" aria-hidden="true">
+                                        {initials(b.fullName)}
+                                    </div>
                                     <div className="title">{b.fullName}</div>
                                     <div className="sub num">{b.phone}</div>
-                                </div>
-                                <span className="chev" aria-hidden="true">
-                  ›
-                </span>
-                            </Link>
-                        ))}
-                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="list">
+                            {data.items.map((b) => (
+                                <Link key={b.id} to={`/borrowers/${b.id}`} className="row">
+                                    <div className="avatar" aria-hidden="true">
+                                        {initials(b.fullName)}
+                                    </div>
+                                    <div className="grow">
+                                        <div className="title">{b.fullName}</div>
+                                        <div className="sub num">{b.phone}</div>
+                                    </div>
+                                    <span className="chev" aria-hidden="true">
+                    ›
+                  </span>
+                                </Link>
+                            ))}
+                        </div>
+                    )}
                     <div className="pager">
             <span className="num">
               {from}–{to} of {data.totalItems}

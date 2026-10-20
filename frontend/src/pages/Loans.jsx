@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth.jsx'
 import LoanList from '../components/LoanList.jsx'
-import { Button, Empty, ErrorNote, Loading, PageHead, Segmented } from '../components/ui.jsx'
-import { useFetch } from '../hooks.js'
+import { Button, Empty, ErrorNote, Loading, PageHead, Segmented, ViewToggle } from '../components/ui.jsx'
+import { useFetch, useStoredState } from '../hooks.js'
 
 const PAGE_SIZE = 12
 
@@ -11,6 +11,7 @@ export default function Loans() {
     const { can } = useAuth()
     const [status, setStatus] = useState('ACTIVE')
     const [page, setPage] = useState(0)
+    const [view, setView] = useStoredState('view:loans', 'list')
     const { data, error, loading, reload } = useFetch(
         `/api/v1/loans?page=${page}&size=${PAGE_SIZE}${status ? `&status=${status}` : ''}`,
     )
@@ -44,6 +45,7 @@ export default function Loans() {
                         { value: '', label: 'All' },
                     ]}
                 />
+                <ViewToggle value={view} onChange={setView} />
             </div>
             <ErrorNote error={error} onRetry={reload} />
             {loading && !data && <Loading />}
@@ -54,7 +56,7 @@ export default function Loans() {
             )}
             {data && data.items.length > 0 && (
                 <>
-                    <LoanList loans={data.items} />
+                    <LoanList loans={data.items} view={view} />
                     <div className="pager">
             <span className="num">
               {from}–{to} of {data.totalItems}

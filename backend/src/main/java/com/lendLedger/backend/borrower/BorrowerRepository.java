@@ -35,4 +35,9 @@ public interface BorrowerRepository extends Repository<Borrower, UUID> {
                           @Param("pattern") String pattern,
                           @Param("phonePattern") String phonePattern,
                           Pageable pageable);
+
+    /** Used to refuse archiving a borrower who still owes money. */
+    @Query(value = "SELECT count(*) FROM loan WHERE tenant_id = :tenantId AND borrower_id = :borrowerId AND status = 'ACTIVE'",
+            nativeQuery = true)
+    long countActiveLoans(@Param("tenantId") UUID tenantId, @Param("borrowerId") UUID borrowerId);
 }

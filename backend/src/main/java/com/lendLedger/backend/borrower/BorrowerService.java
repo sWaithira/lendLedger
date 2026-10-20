@@ -97,10 +97,15 @@ public class BorrowerService {
         return BorrowerDtos.Response.from(borrower);
     }
 
+    /** A borrower who still owes money cannot be archived; archiving hides, it never deletes. */
     @Transactional
     public BorrowerDtos.Response archive(UUID id) {
         Borrower borrower = find(id);
         if (borrower.getStatus() != BorrowerStatus.ARCHIVED) {
+            if (borrowers.countActiveLoans(CurrentUser.tenantId(), id) > 0) {
+                throw new ApiException(HttpStatus.CONFLICT, "borrower_has_active_loans",
+                        "This borrower still has active loans. Archive them once the loans are paid off or cancelled.");
+            }
             borrower.archive();
             audit.record("BORROWER_ARCHIVED", "BORROWER", borrower.getId(), null, Map.of());
         }

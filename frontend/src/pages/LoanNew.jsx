@@ -93,7 +93,7 @@ export default function LoanNew() {
                     <Field label="Borrower">
                         <BorrowerPicker value={borrower} onChange={setPicked} />
                     </Field>
-                    <Field label="Product" hint={product && `${percent(product.ratePerPeriod)} per month on the amount lent`}>
+                    <Field label="Product" hint={product && productTerms(product)}>
                         <select value={productId} onChange={(e) => setProductChoice(e.target.value)} required>
                             {products.data?.map((p) => (
                                 <option key={p.id} value={p.id}>
@@ -106,7 +106,16 @@ export default function LoanNew() {
                         label="Amount (KES)"
                         hint={product && `Between ${formatMoney(product.minPrincipal)} and ${formatMoney(product.maxPrincipal)}`}
                     >
-                        <input type="number" inputMode="decimal" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+                        <input
+                            type="number"
+                            inputMode="decimal"
+                            min={product?.minPrincipal ?? 1}
+                            max={product?.maxPrincipal}
+                            step="any"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            required
+                        />
                     </Field>
                     <Field label="Date issued">
                         <input type="date" max={todayIso()} value={issueDate} onChange={(e) => setIssueDate(e.target.value)} required />
@@ -153,6 +162,16 @@ export default function LoanNew() {
             </form>
         </>
     )
+}
+
+function productTerms(product) {
+    const interest = `${percent(product.ratePerPeriod)} interest per month`
+    const penalty =
+        product.penaltyRatePerPeriod > 0
+            ? `${percent(product.penaltyRatePerPeriod)} late penalty for each month overdue`
+            : 'no late penalty'
+    const grace = product.graceDays > 0 ? ` · ${product.graceDays} days grace` : ''
+    return `${interest} · ${penalty}${grace}`
 }
 
 function Charge({ c }) {

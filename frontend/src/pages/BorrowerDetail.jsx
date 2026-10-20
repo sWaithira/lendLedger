@@ -17,6 +17,7 @@ export default function BorrowerDetail() {
 
     const b = borrower.data
     const archived = b?.status === 'ARCHIVED'
+    const hasActiveLoans = loans.data?.items.some((l) => l.status === 'ACTIVE') ?? false
 
     async function toggleArchive() {
         setBusy(true)
@@ -70,9 +71,16 @@ export default function BorrowerDetail() {
 
                     {can('BORROWER_WRITE') && (
                         <div style={{ marginTop: 32 }}>
-                            <Button variant={archived ? 'secondary' : 'danger'} busy={busy} onClick={toggleArchive}>
+                            <Button variant={archived ? 'secondary' : 'danger'} busy={busy} disabled={!archived && hasActiveLoans} onClick={toggleArchive}>
                                 {archived ? 'Restore borrower' : 'Archive borrower'}
                             </Button>
+                            <p className="muted" style={{ marginTop: 8, fontSize: '0.875rem' }}>
+                                {archived
+                                    ? 'Archived borrowers are hidden from the main list and cannot be given new loans. Their history is kept.'
+                                    : hasActiveLoans
+                                        ? 'You can archive this borrower once their active loans are paid off or cancelled.'
+                                        : 'Archiving hides this borrower from the main list. Their loans and payments are kept.'}
+                            </p>
                         </div>
                     )}
                 </>

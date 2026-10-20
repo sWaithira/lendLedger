@@ -30,6 +30,24 @@ export function useFetch(path) {
         reload: () => setTick((t) => t + 1),
     }
 }
+export function useStoredState(key, initial) {
+    const [value, setValue] = useState(() => {
+        try {
+            return localStorage.getItem(key) ?? initial
+        } catch {
+            return initial
+        }
+    })
+    const update = (next) => {
+        setValue(next)
+        try {
+            localStorage.setItem(key, next)
+        } catch {
+            /* private browsing: the choice lasts until the page is closed */
+        }
+    }
+    return [value, update]
+}
 
 export function useDebounced(value, ms = 300) {
     const [debounced, setDebounced] = useState(value)
