@@ -51,5 +51,5 @@ public final class LoanDtos {
 
     public record ProductView(UUID id, String name, String currency, BigDecimal minPrincipal,
                               BigDecimal maxPrincipal, UUID ruleVersionId, int ruleVersionNumber,
-                              BigDecimal ratePerPeriod, int graceDays, BigDecimal penaltyRatePerPeriod) { }
+                              BigDecimal ratePerPeriod, int graceDays, BigDecimal penaltyRatePerPeriod , int maxTermPeriods) { }
 }

@@ -7,5 +7,6 @@ public enum Permission {
     REPAYMENT_POST, REPAYMENT_REVERSE,
     REPORT_VIEW,
     AUDIT_VIEW,
-    USER_MANAGE
+    USER_MANAGE,
+    SETTINGS_MANAGE
 }

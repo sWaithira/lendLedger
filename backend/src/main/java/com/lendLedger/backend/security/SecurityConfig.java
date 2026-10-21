@@ -35,7 +35,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
-                        .requestMatchers("/error", "/dev-login", "/api/v1/auth/login").permitAll()
+                        .requestMatchers("/error", "/dev-login", "/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/rules/preview").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().denyAll())
                 .csrf(csrf -> csrf

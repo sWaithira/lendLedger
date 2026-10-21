@@ -28,15 +28,23 @@ public class AuditService {
         this.jdbc = jdbc;
     }
 
+    /** Records an action by the signed-in user. */
     @Transactional(propagation = Propagation.MANDATORY)
     public void record(String action, String entityType, UUID entityId, String reason, Map<String, String> detail) {
         LendLedgerPrincipal user = CurrentUser.require();
+        recordAs(user.tenantId(), user.userId(), action, entityType, entityId, reason, detail);
+    }
+
+    /** Records an action by a named person, for moments when nobody is signed in yet (registration). */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void recordAs(UUID tenantId, UUID actorId, String action, String entityType, UUID entityId,
+                         String reason, Map<String, String> detail) {
         jdbc.sql("""
                 INSERT INTO audit_log (tenant_id, actor_id, action, entity_type, entity_id, reason, detail)
                 VALUES (:tenant, :actor, :action, :entityType, :entityId, :reason, CAST(:detail AS jsonb))
                 """)
-                .param("tenant", user.tenantId())
-                .param("actor", user.userId())
+                .param("tenant", tenantId)
+                .param("actor", actorId)
                 .param("action", action)
                 .param("entityType", entityType)
                 .param("entityId", entityId == null ? null : entityId.toString(), Types.VARCHAR)

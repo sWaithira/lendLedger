@@ -3,6 +3,8 @@ import { useAuth } from './auth.jsx'
 import { Icon } from './components/ui.jsx'
 import { ROLE_LABEL } from './format.js'
 import Login from './pages/Login.jsx'
+import Register from './pages/Register.jsx'
+import Settings from './pages/Settings.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Overdue from './pages/Overdue.jsx'
 import Borrowers from './pages/Borrowers.jsx'
@@ -12,7 +14,7 @@ import LoanNew from './pages/LoanNew.jsx'
 import LoanDetail from './pages/LoanDetail.jsx'
 
 function Shell() {
-    const { user, logout } = useAuth()
+    const { user, logout, can } = useAuth()
     return (
         <div className="shell">
             <aside className="sidebar">
@@ -30,6 +32,11 @@ function Shell() {
                     <NavLink to="/loans">
                         <Icon name="loans" /> Loans
                     </NavLink>
+                    {can('SETTINGS_MANAGE') && (
+                        <NavLink to="/settings">
+                            <Icon name="gear" /> Settings
+                        </NavLink>
+                    )}
                 </nav>
                 <div className="me">
                     <strong>{user.name}</strong>
@@ -72,6 +79,7 @@ export default function App() {
     return (
         <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route element={<RequireAuth />}>
                 <Route index element={<Navigate to="/dashboard" replace />} />
                 <Route path="dashboard" element={<Dashboard />} />
@@ -81,6 +89,7 @@ export default function App() {
                 <Route path="loans" element={<Loans />} />
                 <Route path="loans/new" element={<LoanNew />} />
                 <Route path="loans/:id" element={<LoanDetail />} />
+                <Route path="settings" element={<Settings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
         </Routes>

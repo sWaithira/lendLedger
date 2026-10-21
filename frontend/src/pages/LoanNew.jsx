@@ -120,8 +120,8 @@ export default function LoanNew() {
                     <Field label="Date issued">
                         <input type="date" max={todayIso()} value={issueDate} onChange={(e) => setIssueDate(e.target.value)} required />
                     </Field>
-                    <Field label="Term (months)">
-                        <input type="number" min="1" max="60" step="1" value={term} onChange={(e) => setTerm(e.target.value)} required />
+                    <Field label="Term (months)" hint={product && `Up to ${product.maxTermPeriods} month${product.maxTermPeriods === 1 ? '' : 's'}`}>
+                        <input type="number" min="1" max={product?.maxTermPeriods ?? 60} step="1" value={term} onChange={(e) => setTerm(e.target.value)} required />
                     </Field>
                 </div>
 
