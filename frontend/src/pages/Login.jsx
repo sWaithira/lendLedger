@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Navigate, useLocation } from 'react-router-dom'
+import { Link, Navigate, useLocation } from 'react-router-dom'
 import { describeError } from '../api.js'
 import { useAuth } from '../auth.jsx'
 import { Button, Field } from '../components/ui.jsx'
@@ -50,6 +50,9 @@ export default function Login() {
                 <Button type="submit" busy={busy}>
                     Sign in
                 </Button>
+                <p className="muted" style={{ marginTop: 16, textAlign: 'center' }}>
+                    New lender? <Link to="/register">Create an account</Link>
+                </p>
                 {import.meta.env.DEV && (
                     <p className="muted" style={{ marginTop: 20, fontSize: '0.875rem' }}>
                         Demo (development only): owner@demo.lendledger.test or officer@demo.lendledger.test, password Demo#2026pass

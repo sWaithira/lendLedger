@@ -148,6 +148,11 @@ public class LoanService {
                     "Amount must be between " + rule.minPrincipal() + " and " + rule.maxPrincipal(),
                     Map.of("min", rule.minPrincipal(), "max", rule.maxPrincipal()));
         }
+        if (termPeriods > rule.maxTermPeriods()) {
+            throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "term_too_long",
+                    "This product allows loans of up to " + rule.maxTermPeriods() + " month"
+                            + (rule.maxTermPeriods() == 1 ? "" : "s"));
+        }
         try {
             LoanTerms terms = new LoanTerms(principal, issueDate, termPeriods, rule.ratePerPeriod(), rule.graceDays(),
                     rule.penaltyRatePerPeriod(), rule.penaltyCap(), rule.allocationOrder(), rule.roundingMode());
@@ -157,7 +162,7 @@ public class LoanService {
         }
     }
 
-     LoanDtos.LoanView toView(LoanRow row, Map<BalanceComponent, BigDecimal> allocated, LocalDate today) {
+    LoanDtos.LoanView toView(LoanRow row, Map<BalanceComponent, BigDecimal> allocated, LocalDate today) {
         LoanTerms terms = row.terms();
         // Accrual stops on the settlement date (ADR-01).
         LocalDate asOf = (row.settledOn() != null && row.settledOn().isBefore(today)) ? row.settledOn() : today;

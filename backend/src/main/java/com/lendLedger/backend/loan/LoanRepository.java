@@ -30,7 +30,7 @@ class LoanRepository {
     record RuleInfo(UUID ruleVersionId, int versionNumber, String interestMethod, BigDecimal ratePerPeriod,
                     int graceDays, BigDecimal penaltyRatePerPeriod, BigDecimal penaltyCap,
                     List<BalanceComponent> allocationOrder, RoundingMode roundingMode,
-                    String productName, String currency, BigDecimal minPrincipal, BigDecimal maxPrincipal) { }
+                    String productName, String currency, BigDecimal minPrincipal, BigDecimal maxPrincipal , int maxTermPeriods) { }
 
     private record AllocationSum(UUID loanId, BalanceComponent component, BigDecimal total) { }
 
@@ -114,7 +114,7 @@ class LoanRepository {
         return jdbc.sql("""
                         SELECT r.id, r.version_number, r.interest_method, r.rate_per_period, r.grace_days,
                                r.penalty_rate_per_period, r.penalty_cap, r.allocation_order, r.rounding_mode,
-                               p.name, p.currency, p.min_principal, p.max_principal
+                               p.name, p.currency, p.min_principal, p.max_principal, p.max_term_periods
                         FROM loan_product p
                         JOIN loan_rule_version r ON r.tenant_id = p.tenant_id AND r.product_id = p.id
                         WHERE p.tenant_id = :tenant AND p.id = :product AND p.active
@@ -130,13 +130,13 @@ class LoanRepository {
                         rs.getBigDecimal("penalty_rate_per_period"), rs.getBigDecimal("penalty_cap"),
                         readOrder(rs), RoundingMode.valueOf(rs.getString("rounding_mode")),
                         rs.getString("name"), rs.getString("currency"),
-                        rs.getBigDecimal("min_principal"), rs.getBigDecimal("max_principal")))
+                        rs.getBigDecimal("min_principal"), rs.getBigDecimal("max_principal"), rs.getInt("max_term_periods")))
                 .optional();
     }
 
     List<LoanDtos.ProductView> listProducts(UUID tenantId, LocalDate on) {
         return jdbc.sql("""
-                        SELECT p.id, p.name, p.currency, p.min_principal, p.max_principal,
+                        SELECT p.id, p.name, p.currency, p.min_principal, p.max_principal, p.max_term_periods,
                                r.id AS rule_id, r.version_number, r.rate_per_period, r.grace_days,
                                r.penalty_rate_per_period
                         FROM loan_product p
@@ -153,7 +153,8 @@ class LoanRepository {
                         rs.getBigDecimal("min_principal"), rs.getBigDecimal("max_principal"),
                         rs.getObject("rule_id", UUID.class), rs.getInt("version_number"),
                         rs.getBigDecimal("rate_per_period"), rs.getInt("grace_days"),
-                        rs.getBigDecimal("penalty_rate_per_period")))
+                        rs.getBigDecimal("penalty_rate_per_period"),
+                        rs.getInt("max_term_periods")))
                 .list();
     }
 

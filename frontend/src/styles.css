@@ -283,3 +283,19 @@ a.card-item:hover { text-decoration: none; filter: brightness(0.98); }
 .card-amount { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; }
 .card-item .sub { color: var(--text-2); font-size: 0.9375rem; }
 .card-person { display: grid; justify-items: start; gap: 10px; }
+
+/* ---------- registration and settings ---------- */
+.register { max-width: 1080px; margin: 0 auto; padding: 48px 24px 72px; }
+.register-head { margin-bottom: 28px; }
+.register-head h1 { font-size: 2.125rem; line-height: 1.12; font-weight: 700; letter-spacing: -0.03em; }
+.register-head .lede { color: var(--text-2); margin-top: 6px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.sticky { position: sticky; top: 24px; }
+@media (max-width: 860px) { .sticky { position: static; } .register { padding: 28px 16px 56px; } }
+.product-name { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; }
+.card-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+.history { margin-top: 16px; }
+.history summary { cursor: pointer; display: flex; align-items: center; min-height: 44px; color: var(--accent); font-weight: 500; }
+.history ul { margin: 0; padding-left: 18px; color: var(--text-2); font-size: 0.9375rem; display: grid; gap: 6px; }
+.check { display: flex; align-items: center; gap: 12px; min-height: 44px; margin-bottom: 8px; }
+input[type="checkbox"] { width: 22px; min-height: 22px; padding: 0; flex: none; }
