@@ -16,6 +16,9 @@ export const todayIso = () => new Date().toLocaleDateString('en-CA')
 
 export const percent = (rate) => `${Number((rate * 100).toFixed(2))}%`
 
+/** LN-0042: the short number a person can say out loud. */
+export const loanNumber = (n) => `LN-${String(n).padStart(4, '0')}`
+
 export const initials = (name) =>
     name
         .split(/\s+/)
@@ -30,6 +33,7 @@ export const ROLE_LABEL = { OWNER: 'Owner', LOAN_OFFICER: 'Loan officer' }
 export const STATUS = {
     CURRENT: { label: 'On track', tone: 'green' },
     DUE_SOON: { label: 'Due soon', tone: 'orange' },
+    GRACE: { label: 'In grace period', tone: 'orange' },
     OVERDUE: { label: 'Overdue', tone: 'red' },
     COMPLETED: { label: 'Paid off', tone: 'gray' },
     CANCELLED: { label: 'Cancelled', tone: 'gray' },

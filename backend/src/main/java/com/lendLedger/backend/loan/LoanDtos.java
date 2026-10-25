@@ -11,10 +11,14 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
-/** Request and response shapes for the loan API. All money arithmetic happens on the server. */
 public final class LoanDtos {
 
     private LoanDtos() { }
+
+    /** The short number people say out loud: LN-0042. */
+    public static String reference(int loanNumber) {
+        return String.format("LN-%04d", loanNumber);
+    }
 
     public record PreviewRequest(
             @NotNull(message = "Choose a product") UUID productId,
@@ -43,13 +47,14 @@ public final class LoanDtos {
 
     public record BalanceView(BigDecimal principal, BigDecimal interest, BigDecimal penalty, BigDecimal total) { }
 
-    public record LoanView(UUID id, UUID borrowerId, String borrowerName, UUID productId, String productName,
-                           BigDecimal principal, String currency, LocalDate issueDate, int termPeriods,
-                           LocalDate dueDate, BigDecimal ratePerPeriod, int ruleVersionNumber,
+    public record LoanView(UUID id, int loanNumber, UUID borrowerId, String borrowerName, UUID productId,
+                           String productName, BigDecimal principal, String currency, LocalDate issueDate,
+                           int termPeriods, LocalDate dueDate, BigDecimal ratePerPeriod, int ruleVersionNumber,
                            String status, String displayStatus, long daysOverdue,
                            LocalDate asOf, BalanceView outstanding) { }
 
     public record ProductView(UUID id, String name, String currency, BigDecimal minPrincipal,
                               BigDecimal maxPrincipal, UUID ruleVersionId, int ruleVersionNumber,
-                              BigDecimal ratePerPeriod, int graceDays, BigDecimal penaltyRatePerPeriod , int maxTermPeriods) { }
+                              BigDecimal ratePerPeriod, int graceDays, BigDecimal penaltyRatePerPeriod,
+                              int maxTermPeriods) { }
 }

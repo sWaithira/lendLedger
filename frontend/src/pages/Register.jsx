@@ -6,16 +6,34 @@ import { ProductFields, RuleExample, RuleFields } from '../components/LenderForm
 import { Button, Field } from '../components/ui.jsx'
 import { emptyRule, productToPayload, ruleToPayload } from '../rules.js'
 
-/** A new lender creates their account and sets the rules they lend by. Everything after this is theirs alone. */
+/** A new lender creates their account and sets the rules they lend by. They then sign in themselves. */
 export default function Register() {
-    const { user, login } = useAuth()
+    const { user } = useAuth()
     const [account, setAccount] = useState({ businessName: '', ownerName: '', email: '', password: '', accessCode: '' })
     const [product, setProduct] = useState({ name: 'Monthly Loan', minPrincipal: '1000', maxPrincipal: '100000', maxTermPeriods: '6' })
     const [rule, setRule] = useState(emptyRule)
+    const [showPassword, setShowPassword] = useState(false)
+    const [createdFor, setCreatedFor] = useState(null)
     const [error, setError] = useState('')
     const [busy, setBusy] = useState(false)
 
     if (user) return <Navigate to="/dashboard" replace />
+
+    if (createdFor) {
+        return (
+            <div className="signin">
+                <div className="panel">
+                    <h1>Your account is ready</h1>
+                    <p className="lede">
+                        {createdFor.businessName} has been created. Sign in with <strong>{createdFor.email}</strong> to start lending.
+                    </p>
+                    <Link className="btn primary" to="/login" state={{ email: createdFor.email, created: true }}>
+                        Continue to sign in
+                    </Link>
+                </div>
+            </div>
+        )
+    }
 
     const setField = (key) => (e) => setAccount({ ...account, [key]: e.target.value })
 
@@ -32,7 +50,7 @@ export default function Register() {
                 accessCode: account.accessCode.trim() || undefined,
                 product: { ...productToPayload(product), rule: ruleToPayload(rule) },
             })
-            await login(account.email.trim(), account.password)
+            setCreatedFor({ businessName: account.businessName.trim(), email: account.email.trim() })
         } catch (err) {
             setError(describeError(err))
             setBusy(false)
@@ -66,8 +84,20 @@ export default function Register() {
                             <input type="email" value={account.email} onChange={setField('email')} required maxLength={200} autoComplete="username" />
                         </Field>
                         <Field label="Password" hint="At least 10 characters.">
-                            <input type="password" value={account.password} onChange={setField('password')} required minLength={10} maxLength={100} autoComplete="new-password" />
+                            <input
+                                type={showPassword ? 'text' : 'password'}
+                                value={account.password}
+                                onChange={setField('password')}
+                                required
+                                minLength={10}
+                                maxLength={100}
+                                autoComplete="new-password"
+                            />
                         </Field>
+                        <label className="check">
+                            <input type="checkbox" checked={showPassword} onChange={(e) => setShowPassword(e.target.checked)} />
+                            <span>Show password</span>
+                        </label>
                         <Field label="Access code (if you were given one)">
                             <input value={account.accessCode} onChange={setField('accessCode')} maxLength={100} autoComplete="off" />
                         </Field>

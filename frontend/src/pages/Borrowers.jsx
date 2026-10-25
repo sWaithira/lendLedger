@@ -133,7 +133,7 @@ export default function Borrowers() {
 
 /** Creating a borrower whose phone number already exists is allowed, but needs a stated reason (F-005). */
 function NewBorrowerSheet({ onClose, onCreated }) {
-    const [form, setForm] = useState({ fullName: '', phone: '', note: '' })
+    const [form, setForm] = useState({ fullName: '', phone: '', email: '', nationalId: '', note: '' })
     const [matches, setMatches] = useState(null)
     const [reason, setReason] = useState('')
     const [error, setError] = useState('')
@@ -151,6 +151,8 @@ function NewBorrowerSheet({ onClose, onCreated }) {
         try {
             const created = await api.post('/api/v1/borrowers', {
                 ...form,
+                email: form.email.trim() || undefined,
+                nationalId: form.nationalId.trim() || undefined,
                 duplicateReason: matches ? reason : undefined,
             })
             onCreated(created)
@@ -188,6 +190,12 @@ function NewBorrowerSheet({ onClose, onCreated }) {
                 </Field>
                 <Field label="Phone" hint="For example 0712 345 678 or +254 712 345 678">
                     <input type="tel" value={form.phone} onChange={set('phone')} required maxLength={30} autoComplete="off" />
+                </Field>
+                <Field label="Email (optional)" hint="Lets you email them when a payment is late.">
+                    <input type="email" value={form.email} onChange={set('email')} maxLength={200} autoComplete="off" />
+                </Field>
+                <Field label="ID number (optional)" hint="Stored as entered. It is not verified.">
+                    <input value={form.nationalId} onChange={set('nationalId')} maxLength={40} autoComplete="off" />
                 </Field>
                 <Field label="Note (optional)">
                     <textarea value={form.note} onChange={set('note')} maxLength={1000} />

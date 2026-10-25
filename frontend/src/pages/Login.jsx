@@ -7,7 +7,7 @@ import { Button, Field } from '../components/ui.jsx'
 export default function Login() {
     const { user, login } = useAuth()
     const location = useLocation()
-    const [email, setEmail] = useState('')
+    const [email, setEmail] = useState(location.state?.email || '')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
     const [busy, setBusy] = useState(false)
@@ -36,16 +36,21 @@ export default function Login() {
             <form className="panel" onSubmit={submit}>
                 <h1>Sign in to LendLedger</h1>
                 <p className="lede">Loans, repayments and your portfolio in one place.</p>
+                {location.state?.created && (
+                    <div className="notice info" role="status">
+                        Your account was created. Sign in to continue.
+                    </div>
+                )}
                 {error && (
                     <div className="notice error" role="alert">
                         {error}
                     </div>
                 )}
                 <Field label="Email">
-                    <input type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
+                    <input type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus={!location.state?.email} />
                 </Field>
                 <Field label="Password">
-                    <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                    <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required autoFocus={Boolean(location.state?.email)} />
                 </Field>
                 <Button type="submit" busy={busy}>
                     Sign in

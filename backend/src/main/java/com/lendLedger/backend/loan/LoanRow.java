@@ -9,8 +9,7 @@ import java.util.UUID;
 import com.lendLedger.backend.finance.BalanceComponent;
 import com.lendLedger.backend.finance.LoanTerms;
 
-/** A loan joined with the (immutable) rule version it was written under. */
-record LoanRow(UUID id, UUID borrowerId, String borrowerName, UUID productId, String productName,
+record LoanRow(UUID id, int loanNumber, UUID borrowerId, String borrowerName, UUID productId, String productName,
                UUID ruleVersionId, int ruleVersionNumber, BigDecimal principal, String currency,
                LocalDate issueDate, int termPeriods, LocalDate dueDate, String status, LocalDate settledOn,
                BigDecimal ratePerPeriod, int graceDays, BigDecimal penaltyRatePerPeriod, BigDecimal penaltyCap,

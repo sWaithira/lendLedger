@@ -29,7 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class DashboardService {
 
     private static final int MAX_PAGE_SIZE = 100;
-    private static final long MAX_PERIOD_DAYS = 1830;     // about 5 years
+    private static final long MAX_PERIOD_DAYS = 1830;
     private static final long MAX_DAILY_DAYS = 366;
 
     private record ActiveLoan(LoanRow row, LoanDtos.LoanView view) { }
@@ -100,7 +100,6 @@ public class DashboardService {
                 new DashboardDtos.Disbursements(d.count(), d.total()));
     }
 
-    /** One point per day or month in the range, including periods with no collections (shown as zero). */
     @Transactional(readOnly = true)
     public List<DashboardDtos.CollectionPoint> collections(LocalDate from, LocalDate to, String granularity) {
         UUID tenantId = CurrentUser.tenantId();
@@ -128,7 +127,6 @@ public class DashboardService {
         return points;
     }
 
-    /** The collections queue: overdue loans, longest overdue first, biggest balance first on a tie. */
     @Transactional(readOnly = true)
     public PageResponse<DashboardDtos.OverdueItem> overdue(int minDays, int page, int size) {
         UUID tenantId = CurrentUser.tenantId();
@@ -150,17 +148,17 @@ public class DashboardService {
         LocalDate today = LocalDate.now(clock.zone());
         List<LoanRow> rows = loans.listByStatus(tenantId, null);
         Map<UUID, Map<BalanceComponent, BigDecimal>> allocated = loans.allocatedNetAll(tenantId);
-        Map<UUID, String> phones = dashboard.borrowerPhones(tenantId);
+        Map<UUID, DashboardRepository.Contact> contacts = dashboard.borrowerContacts(tenantId);
 
-        CsvWriter csv = new CsvWriter().row("loan_id", "borrower", "phone", "product", "principal", "currency",
+        CsvWriter csv = new CsvWriter().row("loan_number", "borrower", "phone", "product", "principal", "currency",
                 "issue_date", "due_date", "term_months", "status", "display_status", "days_overdue",
                 "outstanding_principal", "outstanding_interest", "outstanding_penalty", "outstanding_total", "as_of");
         for (LoanRow row : rows) {
             LoanDtos.LoanView v = loanService.toView(row, allocated.getOrDefault(row.id(), Map.of()), today);
-            csv.row(row.id(), row.borrowerName(), phones.get(row.borrowerId()), row.productName(), row.principal(),
-                    row.currency(), row.issueDate(), row.dueDate(), row.termPeriods(), row.status(), v.displayStatus(),
-                    v.daysOverdue(), v.outstanding().principal(), v.outstanding().interest(),
-                    v.outstanding().penalty(), v.outstanding().total(), v.asOf());
+            csv.row(LoanDtos.reference(row.loanNumber()), row.borrowerName(), phone(contacts, row.borrowerId()),
+                    row.productName(), row.principal(), row.currency(), row.issueDate(), row.dueDate(),
+                    row.termPeriods(), row.status(), v.displayStatus(), v.daysOverdue(), v.outstanding().principal(),
+                    v.outstanding().interest(), v.outstanding().penalty(), v.outstanding().total(), v.asOf());
         }
         audit.record("REPORT_EXPORTED", "REPORT", null, null, Map.of("report", "loans", "rows", String.valueOf(rows.size())));
         return new DashboardDtos.CsvFile("loans-" + today + ".csv", csv.build());
@@ -173,11 +171,11 @@ public class DashboardService {
         Period period = period(from, to, today);
         List<DashboardRepository.PaymentRow> rows = dashboard.payments(tenantId, period.from(), period.to());
 
-        CsvWriter csv = new CsvWriter().row("payment_date", "recorded_at", "loan_id", "borrower", "amount", "method",
+        CsvWriter csv = new CsvWriter().row("payment_date", "recorded_at", "loan_number", "borrower", "amount", "method",
                 "reference", "principal", "interest", "penalty", "status", "reversed_at", "reversal_reason");
         for (DashboardRepository.PaymentRow r : rows) {
-            csv.row(r.paymentDate(), r.recordedAt(), r.loanId(), r.borrowerName(), r.amount(), r.method(),
-                    r.reference(), r.principal(), r.interest(), r.penalty(),
+            csv.row(r.paymentDate(), r.recordedAt(), LoanDtos.reference(r.loanNumber()), r.borrowerName(), r.amount(),
+                    r.method(), r.reference(), r.principal(), r.interest(), r.penalty(),
                     r.reversedAt() == null ? "POSTED" : "REVERSED", r.reversedAt(), r.reversalReason());
         }
         audit.record("REPORT_EXPORTED", "REPORT", null, null, Map.of("report", "repayments",
@@ -191,12 +189,12 @@ public class DashboardService {
         LocalDate today = LocalDate.now(clock.zone());
         List<DashboardDtos.OverdueItem> items = overdueItems(tenantId, today, minDays);
 
-        CsvWriter csv = new CsvWriter().row("borrower", "phone", "loan_id", "principal", "due_date", "days_overdue",
+        CsvWriter csv = new CsvWriter().row("loan_number", "borrower", "phone", "principal", "due_date", "days_overdue",
                 "overdue_periods", "outstanding_principal", "outstanding_interest", "outstanding_penalty",
                 "outstanding_total", "last_payment_date");
         for (DashboardDtos.OverdueItem i : items) {
-            csv.row(i.borrowerName(), i.borrowerPhone(), i.loanId(), i.principal(), i.dueDate(), i.daysOverdue(),
-                    i.overduePeriods(), i.outstanding().principal(), i.outstanding().interest(),
+            csv.row(LoanDtos.reference(i.loanNumber()), i.borrowerName(), i.borrowerPhone(), i.principal(), i.dueDate(),
+                    i.daysOverdue(), i.overduePeriods(), i.outstanding().principal(), i.outstanding().interest(),
                     i.outstanding().penalty(), i.outstanding().total(), i.lastPaymentDate());
         }
         audit.record("REPORT_EXPORTED", "REPORT", null, null, Map.of("report", "overdue", "rows", String.valueOf(items.size())));
@@ -216,7 +214,7 @@ public class DashboardService {
     }
 
     private List<DashboardDtos.OverdueItem> overdueItems(UUID tenantId, LocalDate today, int minDays) {
-        Map<UUID, String> phones = dashboard.borrowerPhones(tenantId);
+        Map<UUID, DashboardRepository.Contact> contacts = dashboard.borrowerContacts(tenantId);
         Map<UUID, LocalDate> lastPayments = dashboard.lastPaymentDates(tenantId);
         int threshold = Math.max(minDays, 1);
 
@@ -225,14 +223,24 @@ public class DashboardService {
                 .sorted(Comparator.comparingLong((ActiveLoan a) -> a.view().daysOverdue()).reversed()
                         .thenComparing(a -> a.view().outstanding().total(), Comparator.<BigDecimal>reverseOrder())
                         .thenComparing(a -> a.row().id()))
-                .map(a -> new DashboardDtos.OverdueItem(a.row().id(), a.row().borrowerId(), a.row().borrowerName(),
-                        phones.get(a.row().borrowerId()), a.row().principal(), a.row().issueDate(), a.row().dueDate(),
-                        a.view().daysOverdue(), ChargeAssessor.completedOverduePeriods(a.row().terms(), today),
-                        a.view().outstanding(), lastPayments.get(a.row().id())))
+                .map(a -> new DashboardDtos.OverdueItem(a.row().id(), a.row().loanNumber(), a.row().borrowerId(),
+                        a.row().borrowerName(), phone(contacts, a.row().borrowerId()), email(contacts, a.row().borrowerId()),
+                        a.row().principal(), a.row().issueDate(), a.row().dueDate(), a.view().daysOverdue(),
+                        ChargeAssessor.completedOverduePeriods(a.row().terms(), today), a.view().outstanding(),
+                        lastPayments.get(a.row().id())))
                 .toList();
     }
 
-    /** Default period: the first of this month up to today. */
+    private static String phone(Map<UUID, DashboardRepository.Contact> contacts, UUID borrowerId) {
+        DashboardRepository.Contact c = contacts.get(borrowerId);
+        return c == null ? null : c.phone();
+    }
+
+    private static String email(Map<UUID, DashboardRepository.Contact> contacts, UUID borrowerId) {
+        DashboardRepository.Contact c = contacts.get(borrowerId);
+        return c == null ? null : c.email();
+    }
+
     private static Period period(LocalDate from, LocalDate to, LocalDate today) {
         LocalDate end = to != null ? to : today;
         LocalDate start = from != null ? from : end.withDayOfMonth(1);

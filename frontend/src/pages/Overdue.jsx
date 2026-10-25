@@ -1,17 +1,17 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import ContactSheet from '../components/ContactSheet.jsx'
-import { Button, Empty, ErrorNote, Loading, PageHead, Segmented } from '../components/ui.jsx'
-import { formatDate, formatMoney } from '../format.js'
+import { Button, Empty, ErrorNote, Loading, PageHead } from '../components/ui.jsx'
+import { formatDate, formatMoney, loanNumber } from '../format.js'
 import { useFetch } from '../hooks.js'
 
 const PAGE_SIZE = 12
 
+/** Loans become overdue only after the lender's own grace period ends. Longest overdue first. */
 export default function Overdue() {
-    const [minDays, setMinDays] = useState('1')
     const [page, setPage] = useState(0)
     const [contact, setContact] = useState(null)
-    const { data, error, loading, reload } = useFetch(`/api/v1/overdue?minDays=${minDays}&page=${page}&size=${PAGE_SIZE}`)
+    const { data, error, loading, reload } = useFetch(`/api/v1/overdue?page=${page}&size=${PAGE_SIZE}`)
     const from = data ? data.page * data.size + 1 : 0
     const to = data ? data.page * data.size + data.items.length : 0
 
@@ -19,33 +19,18 @@ export default function Overdue() {
         <>
             <PageHead
                 title="Overdue"
-                subtitle="Longest overdue first. Contact them, then record what they say."
+                subtitle="Past the grace period, longest first. Contact them, then record what they say."
                 actions={
-                    <a className="btn secondary" href={`/api/v1/exports/overdue.csv?minDays=${minDays}`} download>
+                    <a className="btn secondary" href="/api/v1/exports/overdue.csv" download>
                         Download CSV
                     </a>
                 }
             />
-            <div className="toolbar">
-                <Segmented
-                    label="How overdue"
-                    value={minDays}
-                    onChange={(v) => {
-                        setMinDays(v)
-                        setPage(0)
-                    }}
-                    options={[
-                        { value: '1', label: 'All' },
-                        { value: '30', label: '30+ days' },
-                        { value: '90', label: '90+ days' },
-                    ]}
-                />
-            </div>
             <ErrorNote error={error} onRetry={reload} />
             {loading && !data && <Loading />}
             {data && data.items.length === 0 && (
                 <div className="list">
-                    <Empty title="All caught up">No loans match. Good news.</Empty>
+                    <Empty title="All caught up">Nothing is past its grace period. Good news.</Empty>
                 </div>
             )}
             {data && data.items.length > 0 && (
@@ -57,13 +42,13 @@ export default function Overdue() {
                                     <div className="grow">
                                         <div className="title">{o.borrowerName}</div>
                                         <div className="sub">
-                                            <span className="late">{o.daysOverdue} days overdue</span> · due {formatDate(o.dueDate)} ·{' '}
+                                            {loanNumber(o.loanNumber)} · <span className="late">{o.daysOverdue} days overdue</span> · due {formatDate(o.dueDate)} ·{' '}
                                             {o.lastPaymentDate ? `last payment ${formatDate(o.lastPaymentDate)}` : 'no payments yet'}
                                         </div>
                                     </div>
                                     <div className="money title">{formatMoney(o.outstanding.total)}</div>
                                 </Link>
-                                {o.borrowerPhone && (
+                                {(o.borrowerPhone || o.borrowerEmail) && (
                                     <Button variant="secondary" aria-label={`Contact ${o.borrowerName}`} onClick={() => setContact(o)}>
                                         Contact
                                     </Button>

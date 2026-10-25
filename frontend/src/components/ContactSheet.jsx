@@ -2,10 +2,7 @@ import { useState } from 'react'
 import { formatDate, formatMoney } from '../format.js'
 import { Button, Field, Sheet } from './ui.jsx'
 
-/**
- * Reach a borrower by call, text or WhatsApp. These open the person's own phone or WhatsApp with the message
- * ready to send; nothing is sent from LendLedger itself.
- */
+/** Opens the person's own phone, WhatsApp or mail app with the message ready. Nothing is sent from LendLedger. */
 export default function ContactSheet({ item, onClose }) {
     const first = item.borrowerName.split(' ')[0]
     const [message, setMessage] = useState(
@@ -40,10 +37,18 @@ export default function ContactSheet({ item, onClose }) {
                     <span className="grow title">WhatsApp</span>
                     <span className="sub">Opens in a new tab</span>
                 </a>
+                {item.borrowerEmail && (
+                    <a className="row" href={`mailto:${item.borrowerEmail}?subject=${encodeURIComponent('Loan payment reminder')}&body=${text}`}>
+                        <span className="grow title">Email</span>
+                        <span className="sub">{item.borrowerEmail}</span>
+                    </a>
+                )}
             </div>
-            <p className="muted" style={{ margin: '14px 0 8px', fontSize: '0.8125rem' }}>
-                Email isn’t available yet because borrowers don’t have an email address on file.
-            </p>
+            {!item.borrowerEmail && (
+                <p className="muted" style={{ margin: '14px 0 8px', fontSize: '0.8125rem' }}>
+                    To email {first}, add an email address to their profile.
+                </p>
+            )}
         </Sheet>
     )
 }

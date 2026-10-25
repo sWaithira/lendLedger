@@ -1,8 +1,7 @@
 import { Link } from 'react-router-dom'
-import { formatDate, formatMoney } from '../format.js'
+import { formatDate, formatMoney, loanNumber } from '../format.js'
 import { StatusBadge } from './ui.jsx'
 
-/** Loans as an inset list or as cards: who, how much is still owed, when it falls due, and how it is doing. */
 export default function LoanList({ loans, showBorrower = true, view = 'list' }) {
     if (view === 'cards') {
         return (
@@ -16,7 +15,7 @@ export default function LoanList({ loans, showBorrower = true, view = 'list' }) 
                         <div className="card-amount money">{formatMoney(l.outstanding.total)}</div>
                         <div className="sub">still owed{showBorrower ? ` · lent ${formatMoney(l.principal)}` : ''}</div>
                         <div className="sub">
-                            Due {formatDate(l.dueDate)}
+                            {loanNumber(l.loanNumber)} · Due {formatDate(l.dueDate)}
                             {l.daysOverdue > 0 ? ` · ${l.daysOverdue} days overdue` : ''}
                         </div>
                     </Link>
@@ -31,7 +30,7 @@ export default function LoanList({ loans, showBorrower = true, view = 'list' }) 
                     <div className="grow">
                         <div className="title">{showBorrower ? l.borrowerName : formatMoney(l.principal)}</div>
                         <div className="sub">
-                            {showBorrower ? `${formatMoney(l.principal)} · ` : ''}
+                            {loanNumber(l.loanNumber)} · {showBorrower ? `${formatMoney(l.principal)} · ` : ''}
                             Due {formatDate(l.dueDate)}
                             {l.daysOverdue > 0 ? ` · ${l.daysOverdue} days overdue` : ''}
                         </div>

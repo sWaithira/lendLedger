@@ -34,7 +34,6 @@ public class BorrowerService {
         this.audit = audit;
     }
 
-    /** F-004 / F-005: a matching phone number is a warning, not a block. Proceeding needs a reason. */
     @Transactional
     public BorrowerDtos.Response create(BorrowerDtos.CreateRequest request) {
         LendLedgerPrincipal user = CurrentUser.require();
@@ -45,11 +44,12 @@ public class BorrowerService {
         if (!matches.isEmpty() && reason == null) {
             throw new ApiException(HttpStatus.CONFLICT, "possible_duplicate",
                     "A borrower with this phone number already exists. Add a reason to save anyway.",
-                    Map.of("matches", matches.stream().map(BorrowerDtos.Response::from).toList()));
+                    Map.of("matches", matches.stream().map(BorrowerDtos.Response::masked).toList()));
         }
 
         Borrower saved = borrowers.save(Borrower.create(user.tenantId(), user.userId(),
-                request.fullName().trim(), request.phone().trim(), normalized, blankToNull(request.note())));
+                request.fullName().trim(), request.phone().trim(), normalized,
+                normalizeEmail(request.email()), blankToNull(request.nationalId()), blankToNull(request.note())));
 
         Map<String, String> detail = new LinkedHashMap<>();
         if (!matches.isEmpty()) {
@@ -82,14 +82,15 @@ public class BorrowerService {
             String phonePattern = digits.isEmpty() ? pattern : "%" + digits + "%";
             result = borrowers.search(tenantId, effective, pattern, phonePattern, pageable);
         }
-        return PageResponse.of(result.map(BorrowerDtos.Response::from));
+        return PageResponse.of(result.map(BorrowerDtos.Response::masked));
     }
 
     @Transactional
     public BorrowerDtos.Response update(UUID id, BorrowerDtos.UpdateRequest request) {
         Borrower borrower = find(id);
         List<String> changed = borrower.applyChanges(request.fullName().trim(), request.phone().trim(),
-                normalizePhone(request.phone()), blankToNull(request.note()));
+                normalizePhone(request.phone()), normalizeEmail(request.email()),
+                blankToNull(request.nationalId()), blankToNull(request.note()));
         if (!changed.isEmpty()) {
             audit.record("BORROWER_UPDATED", "BORROWER", borrower.getId(), null,
                     Map.of("changed", String.join(",", changed)));
@@ -134,6 +135,11 @@ public class BorrowerService {
         } catch (IllegalArgumentException e) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "invalid_phone", e.getMessage());
         }
+    }
+
+    private static String normalizeEmail(String email) {
+        String e = blankToNull(email);
+        return e == null ? null : e.toLowerCase(Locale.ROOT);
     }
 
     private static String sanitize(String q) {

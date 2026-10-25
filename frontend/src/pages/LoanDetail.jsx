@@ -4,7 +4,7 @@ import { useAuth } from '../auth.jsx'
 import PaymentSheet from '../components/PaymentSheet.jsx'
 import ReverseSheet from '../components/ReverseSheet.jsx'
 import { Badge, Button, Empty, ErrorNote, Loading, PageHead, StatusBadge } from '../components/ui.jsx'
-import { formatDate, formatMoney, percent } from '../format.js'
+import { formatDate, formatMoney, loanNumber, percent } from '../format.js'
 import { useFetch } from '../hooks.js'
 
 const COMPONENT_LABEL = { PENALTY: 'Penalty', INTEREST: 'Interest', PRINCIPAL: 'Principal' }
@@ -51,7 +51,7 @@ export default function LoanDetail() {
                 <>
                     <PageHead
                         title={`${formatMoney(l.principal)} loan`}
-                        subtitle={`${l.borrowerName} · ${l.productName} · Issued ${formatDate(l.issueDate)}`}
+                        subtitle={`${loanNumber(l.loanNumber)} · ${l.borrowerName} · ${l.productName} · Issued ${formatDate(l.issueDate)}`}
                         actions={
                             <span className="head-actions">
                 <StatusBadge status={l.displayStatus} />

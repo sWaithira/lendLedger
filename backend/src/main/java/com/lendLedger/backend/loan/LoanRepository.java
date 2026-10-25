@@ -20,22 +20,20 @@ import com.lendLedger.backend.finance.BalanceComponent;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
-/**
- * Plain SQL for loans. EVERY query filters on tenant_id (ADR-05); there is no method that looks a loan up
- * by ID alone.
- */
+/** Plain SQL for loans. EVERY query filters on tenant_id (ADR-05). */
 @Repository
 class LoanRepository {
 
     record RuleInfo(UUID ruleVersionId, int versionNumber, String interestMethod, BigDecimal ratePerPeriod,
                     int graceDays, BigDecimal penaltyRatePerPeriod, BigDecimal penaltyCap,
                     List<BalanceComponent> allocationOrder, RoundingMode roundingMode,
-                    String productName, String currency, BigDecimal minPrincipal, BigDecimal maxPrincipal , int maxTermPeriods) { }
+                    String productName, String currency, BigDecimal minPrincipal, BigDecimal maxPrincipal,
+                    int maxTermPeriods) { }
 
     private record AllocationSum(UUID loanId, BalanceComponent component, BigDecimal total) { }
 
     private static final String LOAN_SELECT = """
-            SELECT l.id, l.borrower_id, b.full_name AS borrower_name, l.product_id, p.name AS product_name,
+            SELECT l.id, l.loan_number, l.borrower_id, b.full_name AS borrower_name, l.product_id, p.name AS product_name,
                    l.rule_version_id, r.version_number, l.principal, l.currency, l.issue_date, l.term_periods,
                    l.due_date, l.status, l.settled_on, r.rate_per_period, r.grace_days,
                    r.penalty_rate_per_period, r.penalty_cap, r.allocation_order, r.rounding_mode
@@ -81,6 +79,16 @@ class LoanRepository {
                 .single();
     }
 
+    /** All loans of the tenant, optionally one stored status (null = every status), earliest due date first. */
+    List<LoanRow> listByStatus(UUID tenantId, String status) {
+        Map<String, Object> params = new HashMap<>();
+        String where = filter(tenantId, null, status, params);
+        return jdbc.sql(LOAN_SELECT + where + " ORDER BY l.due_date, l.id")
+                .params(params)
+                .query(LoanRepository::mapLoan)
+                .list();
+    }
+
     /** Net of reversals: original allocations are positive, their mirror rows negative. */
     Map<UUID, Map<BalanceComponent, BigDecimal>> allocatedNet(UUID tenantId, Collection<UUID> loanIds) {
         Map<UUID, Map<BalanceComponent, BigDecimal>> result = new HashMap<>();
@@ -93,6 +101,25 @@ class LoanRepository {
                         """)
                 .param("tenant", tenantId)
                 .param("ids", loanIds)
+                .query((rs, n) -> new AllocationSum(rs.getObject("loan_id", UUID.class),
+                        BalanceComponent.valueOf(rs.getString("component")), rs.getBigDecimal("total")))
+                .list();
+        for (AllocationSum s : sums) {
+            result.computeIfAbsent(s.loanId(), k -> new EnumMap<>(BalanceComponent.class)).put(s.component(), s.total());
+        }
+        return result;
+    }
+
+    /** Net allocations for every loan of the tenant in one query (used by reports). */
+    Map<UUID, Map<BalanceComponent, BigDecimal>> allocatedNetAll(UUID tenantId) {
+        Map<UUID, Map<BalanceComponent, BigDecimal>> result = new HashMap<>();
+        List<AllocationSum> sums = jdbc.sql("""
+                        SELECT loan_id, component, SUM(amount) AS total
+                        FROM payment_allocation
+                        WHERE tenant_id = :tenant
+                        GROUP BY loan_id, component
+                        """)
+                .param("tenant", tenantId)
                 .query((rs, n) -> new AllocationSum(rs.getObject("loan_id", UUID.class),
                         BalanceComponent.valueOf(rs.getString("component")), rs.getBigDecimal("total")))
                 .list();
@@ -130,7 +157,8 @@ class LoanRepository {
                         rs.getBigDecimal("penalty_rate_per_period"), rs.getBigDecimal("penalty_cap"),
                         readOrder(rs), RoundingMode.valueOf(rs.getString("rounding_mode")),
                         rs.getString("name"), rs.getString("currency"),
-                        rs.getBigDecimal("min_principal"), rs.getBigDecimal("max_principal"), rs.getInt("max_term_periods")))
+                        rs.getBigDecimal("min_principal"), rs.getBigDecimal("max_principal"),
+                        rs.getInt("max_term_periods")))
                 .optional();
     }
 
@@ -153,41 +181,12 @@ class LoanRepository {
                         rs.getBigDecimal("min_principal"), rs.getBigDecimal("max_principal"),
                         rs.getObject("rule_id", UUID.class), rs.getInt("version_number"),
                         rs.getBigDecimal("rate_per_period"), rs.getInt("grace_days"),
-                        rs.getBigDecimal("penalty_rate_per_period"),
-                        rs.getInt("max_term_periods")))
+                        rs.getBigDecimal("penalty_rate_per_period"), rs.getInt("max_term_periods")))
                 .list();
     }
 
     // ------------------------------------------------------------------ writes
 
-    /** All loans of the tenant, optionally only one stored status (null = every status), earliest due date first. */
-    List<LoanRow> listByStatus(UUID tenantId, String status) {
-        Map<String, Object> params = new HashMap<>();
-        String where = filter(tenantId, null, status, params);
-        return jdbc.sql(LOAN_SELECT + where + " ORDER BY l.due_date, l.id")
-                .params(params)
-                .query(LoanRepository::mapLoan)
-                .list();
-    }
-
-    /** Net allocations for every loan of the tenant in one query (used by reports). */
-    Map<UUID, Map<BalanceComponent, BigDecimal>> allocatedNetAll(UUID tenantId) {
-        Map<UUID, Map<BalanceComponent, BigDecimal>> result = new HashMap<>();
-        List<AllocationSum> sums = jdbc.sql("""
-                        SELECT loan_id, component, SUM(amount) AS total
-                        FROM payment_allocation
-                        WHERE tenant_id = :tenant
-                        GROUP BY loan_id, component
-                        """)
-                .param("tenant", tenantId)
-                .query((rs, n) -> new AllocationSum(rs.getObject("loan_id", UUID.class),
-                        BalanceComponent.valueOf(rs.getString("component")), rs.getBigDecimal("total")))
-                .list();
-        for (AllocationSum s : sums) {
-            result.computeIfAbsent(s.loanId(), k -> new EnumMap<>(BalanceComponent.class)).put(s.component(), s.total());
-        }
-        return result;
-    }
     /** Locks the loan row until the transaction ends, so payments on one loan are processed one at a time (ADR-03). */
     Optional<LoanRow> lockById(UUID tenantId, UUID id) {
         return jdbc.sql(LOAN_SELECT + " WHERE l.tenant_id = :tenant AND l.id = :id FOR UPDATE OF l")
@@ -218,16 +217,29 @@ class LoanRepository {
                 .update();
     }
 
-    void insertLoan(UUID id, UUID tenantId, UUID borrowerId, UUID productId, UUID ruleVersionId,
+    /** The next short number for this lender. The upsert locks the counter row, so numbers are never doubled. */
+    int nextLoanNumber(UUID tenantId) {
+        return jdbc.sql("""
+                        INSERT INTO tenant_counter (tenant_id, name, next_value) VALUES (:tenant, 'loan', 2)
+                        ON CONFLICT (tenant_id, name) DO UPDATE SET next_value = tenant_counter.next_value + 1
+                        RETURNING next_value - 1
+                        """)
+                .param("tenant", tenantId)
+                .query(Integer.class)
+                .single();
+    }
+
+    void insertLoan(UUID id, int loanNumber, UUID tenantId, UUID borrowerId, UUID productId, UUID ruleVersionId,
                     BigDecimal principal, String currency, LocalDate issueDate, int termPeriods,
                     LocalDate dueDate, String snapshotJson, UUID createdBy) {
         jdbc.sql("""
-                        INSERT INTO loan (id, tenant_id, borrower_id, product_id, rule_version_id, principal, currency,
-                                          issue_date, term_periods, due_date, status, terms_snapshot, created_by)
-                        VALUES (:id, :tenant, :borrower, :product, :rule, :principal, :currency,
+                        INSERT INTO loan (id, loan_number, tenant_id, borrower_id, product_id, rule_version_id, principal,
+                                          currency, issue_date, term_periods, due_date, status, terms_snapshot, created_by)
+                        VALUES (:id, :number, :tenant, :borrower, :product, :rule, :principal, :currency,
                                 :issue, :term, :due, 'ACTIVE', CAST(:snapshot AS jsonb), :user)
                         """)
                 .param("id", id)
+                .param("number", loanNumber)
                 .param("tenant", tenantId)
                 .param("borrower", borrowerId)
                 .param("product", productId)
@@ -247,7 +259,7 @@ class LoanRepository {
         jdbc.sql("""
                         INSERT INTO charge_event (tenant_id, loan_id, charge_type, period_kind, period_number,
                                                   effective_date, amount, rule_version_id)
-                       VALUES (:tenant, :loan, :type, :kind, :period, :effective, :amount, :rule)
+                        VALUES (:tenant, :loan, :type, :kind, :period, :effective, :amount, :rule)
                         ON CONFLICT (loan_id, charge_type, period_kind, period_number) DO NOTHING
                         """)
                 .param("tenant", tenantId)
@@ -279,8 +291,8 @@ class LoanRepository {
 
     private static LoanRow mapLoan(ResultSet rs, int rowNum) throws SQLException {
         return new LoanRow(
-                rs.getObject("id", UUID.class), rs.getObject("borrower_id", UUID.class), rs.getString("borrower_name"),
-                rs.getObject("product_id", UUID.class), rs.getString("product_name"),
+                rs.getObject("id", UUID.class), rs.getInt("loan_number"), rs.getObject("borrower_id", UUID.class),
+                rs.getString("borrower_name"), rs.getObject("product_id", UUID.class), rs.getString("product_name"),
                 rs.getObject("rule_version_id", UUID.class), rs.getInt("version_number"),
                 rs.getBigDecimal("principal"), rs.getString("currency"),
                 rs.getObject("issue_date", LocalDate.class), rs.getInt("term_periods"),
