@@ -2,6 +2,7 @@ package com.lendLedger.backend.loan;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 public final class DashboardDtos {
 
@@ -14,17 +15,16 @@ public final class DashboardDtos {
 
     public record Disbursements(long loans, BigDecimal principal) { }
 
-    /** asOf is today in the lender's timezone; collections and disbursements cover from..to inclusive. */
     public record Summary(LocalDate asOf, LocalDate from, LocalDate to, Portfolio portfolio,
                           CollectionTotals collections, Disbursements disbursements) { }
 
     public record CollectionPoint(LocalDate periodStart, BigDecimal total, BigDecimal principal,
                                   BigDecimal interest, BigDecimal penalty) { }
 
-    public record OverdueItem(java.util.UUID loanId, java.util.UUID borrowerId, String borrowerName,
-                              String borrowerPhone, BigDecimal principal, LocalDate issueDate, LocalDate dueDate,
-                              long daysOverdue, int overduePeriods, LoanDtos.BalanceView outstanding,
-                              LocalDate lastPaymentDate) { }
+    public record OverdueItem(UUID loanId, int loanNumber, UUID borrowerId, String borrowerName,
+                              String borrowerPhone, String borrowerEmail, BigDecimal principal, LocalDate issueDate,
+                              LocalDate dueDate, long daysOverdue, int overduePeriods,
+                              LoanDtos.BalanceView outstanding, LocalDate lastPaymentDate) { }
 
     public record CsvFile(String filename, String content) { }
 }

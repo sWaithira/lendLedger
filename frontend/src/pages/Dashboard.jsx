@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../auth.jsx'
 import BarChart from '../components/BarChart.jsx'
 import { Empty, ErrorNote, Loading, PageHead, Segmented } from '../components/ui.jsx'
-import { formatDate, formatMoney } from '../format.js'
+import { formatDate, formatMoney, loanNumber } from '../format.js'
 import { useFetch } from '../hooks.js'
 
 const iso = (d) => d.toLocaleDateString('en-CA')
@@ -143,7 +143,7 @@ export default function Dashboard() {
                             <div className="grow">
                                 <div className="title">{o.borrowerName}</div>
                                 <div className="sub">
-                                    {o.daysOverdue} days overdue · due {formatDate(o.dueDate)}
+                                    {loanNumber(o.loanNumber)} · {o.daysOverdue} days overdue · due {formatDate(o.dueDate)}
                                 </div>
                             </div>
                             <div className="money title">{formatMoney(o.outstanding.total)}</div>

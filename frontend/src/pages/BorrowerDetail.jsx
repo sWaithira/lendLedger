@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { api, describeError } from '../api.js'
 import { useAuth } from '../auth.jsx'
 import LoanList from '../components/LoanList.jsx'
-import { Button, Empty, ErrorNote, Loading, PageHead } from '../components/ui.jsx'
+import { Badge, Button, Empty, ErrorNote, Field, Loading, PageHead, Sheet } from '../components/ui.jsx'
 import { formatDate } from '../format.js'
 import { useFetch } from '../hooks.js'
 
@@ -14,6 +14,7 @@ export default function BorrowerDetail() {
     const loans = useFetch(`/api/v1/loans?borrowerId=${id}&size=50`)
     const [actionError, setActionError] = useState(null)
     const [busy, setBusy] = useState(false)
+    const [editing, setEditing] = useState(false)
 
     const b = borrower.data
     const archived = b?.status === 'ARCHIVED'
@@ -44,7 +45,7 @@ export default function BorrowerDetail() {
                 <>
                     <PageHead
                         title={b.fullName}
-                        subtitle={`${b.phone} · Added ${formatDate(b.createdAt.slice(0, 10))}${archived ? ' · Archived' : ''}`}
+                        subtitle={`Added ${formatDate(b.createdAt.slice(0, 10))}${archived ? ' · Archived' : ''}`}
                         actions={
                             can('LOAN_CREATE') &&
                             !archived && (
@@ -54,10 +55,46 @@ export default function BorrowerDetail() {
                             )
                         }
                     />
+
+                    <h2 className="section-title">Contact and ID</h2>
+                    <div className="card">
+                        <dl className="kv">
+                            <dt>Phone</dt>
+                            <dd className="num">{b.phone}</dd>
+                            <dt>Email</dt>
+                            <dd>{b.email || 'Not given'}</dd>
+                            <dt>ID number</dt>
+                            <dd>
+                                {b.nationalId ? (
+                                    <>
+                                        <span className="num">{b.nationalId}</span>{' '}
+                                        <Badge tone={b.kycStatus === 'VERIFIED' ? 'green' : 'orange'}>{b.kycStatus === 'VERIFIED' ? 'Verified' : 'Not verified'}</Badge>
+                                    </>
+                                ) : (
+                                    'Not given'
+                                )}
+                            </dd>
+                        </dl>
+                        {b.nationalId && b.kycStatus !== 'VERIFIED' && (
+                            <p className="muted" style={{ marginTop: 12, fontSize: '0.8125rem' }}>
+                                The ID number is stored as entered. It has not been checked against any record.
+                            </p>
+                        )}
+                        {can('BORROWER_WRITE') && (
+                            <div style={{ marginTop: 16 }}>
+                                <Button variant="secondary" onClick={() => setEditing(true)}>
+                                    Edit details
+                                </Button>
+                            </div>
+                        )}
+                    </div>
                     {b.note && (
-                        <div className="card">
-                            <p>{b.note}</p>
-                        </div>
+                        <>
+                            <h2 className="section-title">Note</h2>
+                            <div className="card">
+                                <p>{b.note}</p>
+                            </div>
+                        </>
                     )}
 
                     <h2 className="section-title">Loans</h2>
@@ -85,6 +122,88 @@ export default function BorrowerDetail() {
                     )}
                 </>
             )}
+            {editing && b && (
+                <EditBorrowerSheet
+                    borrower={b}
+                    onClose={() => setEditing(false)}
+                    onSaved={() => {
+                        setEditing(false)
+                        borrower.reload()
+                    }}
+                />
+            )}
         </>
+    )
+}
+
+function EditBorrowerSheet({ borrower, onClose, onSaved }) {
+    const [form, setForm] = useState({
+        fullName: borrower.fullName,
+        phone: borrower.phone,
+        email: borrower.email || '',
+        nationalId: borrower.nationalId || '',
+        note: borrower.note || '',
+    })
+    const [error, setError] = useState('')
+    const [busy, setBusy] = useState(false)
+    const set = (key) => (e) => setForm({ ...form, [key]: e.target.value })
+
+    async function submit(e) {
+        e.preventDefault()
+        setBusy(true)
+        setError('')
+        try {
+            await api.put(`/api/v1/borrowers/${borrower.id}`, {
+                fullName: form.fullName,
+                phone: form.phone,
+                email: form.email.trim() || undefined,
+                nationalId: form.nationalId.trim() || undefined,
+                note: form.note,
+            })
+            onSaved()
+        } catch (err) {
+            setError(describeError(err))
+            setBusy(false)
+        }
+    }
+
+    return (
+        <Sheet
+            title="Edit details"
+            onClose={onClose}
+            footer={
+                <>
+                    <Button variant="secondary" type="button" onClick={onClose}>
+                        Cancel
+                    </Button>
+                    <Button type="submit" form="edit-borrower" busy={busy}>
+                        Save
+                    </Button>
+                </>
+            }
+        >
+            <form id="edit-borrower" onSubmit={submit}>
+                {error && (
+                    <div className="notice error" role="alert">
+                        {error}
+                    </div>
+                )}
+                <Field label="Full name">
+                    <input value={form.fullName} onChange={set('fullName')} required maxLength={200} autoComplete="off" />
+                </Field>
+                <Field label="Phone">
+                    <input type="tel" value={form.phone} onChange={set('phone')} required maxLength={30} autoComplete="off" />
+                </Field>
+                <Field label="Email (optional)">
+                    <input type="email" value={form.email} onChange={set('email')} maxLength={200} autoComplete="off" />
+                </Field>
+                <Field label="ID number (optional)" hint="Stored as entered. It is not verified.">
+                    <input value={form.nationalId} onChange={set('nationalId')} maxLength={40} autoComplete="off" />
+                </Field>
+                <Field label="Note (optional)">
+                    <textarea value={form.note} onChange={set('note')} maxLength={1000} />
+                </Field>
+            </form>
+        </Sheet>
     )
 }

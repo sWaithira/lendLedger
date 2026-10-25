@@ -1,7 +1,6 @@
 package com.lendLedger.backend.loan;
 
 import java.math.BigDecimal;
-import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -23,13 +22,15 @@ class DashboardRepository {
 
     record Disbursement(long count, BigDecimal total) { }
 
-    record PaymentRow(LocalDate paymentDate, Instant recordedAt, UUID loanId, String borrowerName,
+    record Contact(String phone, String email) { }
+
+    record PaymentRow(LocalDate paymentDate, Instant recordedAt, UUID loanId, int loanNumber, String borrowerName,
                       BigDecimal amount, String method, String reference, BigDecimal principal,
                       BigDecimal interest, BigDecimal penalty, Instant reversedAt, String reversalReason) { }
 
     private record StatusCount(String status, long n) { }
 
-    private record PhoneRow(UUID id, String phone) { }
+    private record ContactRow(UUID id, Contact contact) { }
 
     private record LastPayment(UUID loanId, LocalDate date) { }
 
@@ -62,11 +63,7 @@ class DashboardRepository {
                 .single();
     }
 
-    /**
-     * Money collected per period, split by component. An allocation counts on the payment date; its negative
-     * mirror row (a reversal) counts on the day the reversal was recorded in the lender's timezone, so closed
-     * periods never change. unit must be 'day' or 'month' (validated by the caller).
-     */
+    /** Money collected per period by component. A reversal counts on the day it was recorded, so closed periods never change. */
     List<CollectionRow> collections(UUID tenantId, ZoneId zone, LocalDate from, LocalDate to, String unit) {
         return jdbc.sql("""
                         SELECT date_trunc(:unit, eff.d::timestamp)::date AS period_start,
@@ -94,15 +91,16 @@ class DashboardRepository {
                 .list();
     }
 
-    /** Borrower id to normalised phone number (digits only). */
-    Map<UUID, String> borrowerPhones(UUID tenantId) {
-        List<PhoneRow> rows = jdbc.sql("SELECT id, phone_normalized FROM borrower WHERE tenant_id = :tenant")
+    /** Borrower id to phone (digits only) and email. */
+    Map<UUID, Contact> borrowerContacts(UUID tenantId) {
+        List<ContactRow> rows = jdbc.sql("SELECT id, phone_normalized, email FROM borrower WHERE tenant_id = :tenant")
                 .param("tenant", tenantId)
-                .query((rs, i) -> new PhoneRow(rs.getObject("id", UUID.class), rs.getString("phone_normalized")))
+                .query((rs, i) -> new ContactRow(rs.getObject("id", UUID.class),
+                        new Contact(rs.getString("phone_normalized"), rs.getString("email"))))
                 .list();
-        Map<UUID, String> phones = new HashMap<>();
-        rows.forEach(r -> phones.put(r.id(), r.phone()));
-        return phones;
+        Map<UUID, Contact> contacts = new HashMap<>();
+        rows.forEach(r -> contacts.put(r.id(), r.contact()));
+        return contacts;
     }
 
     /** Loan id to the date of its latest payment that has not been reversed. */
@@ -127,7 +125,7 @@ class DashboardRepository {
     /** Every payment dated in the range, with its original split and reversal (if any). */
     List<PaymentRow> payments(UUID tenantId, LocalDate from, LocalDate to) {
         return jdbc.sql("""
-                        SELECT r.payment_date, r.recorded_at, r.loan_id, b.full_name, r.amount, r.method, r.reference,
+                        SELECT r.payment_date, r.recorded_at, r.loan_id, l.loan_number, b.full_name, r.amount, r.method, r.reference,
                                COALESCE(SUM(a.amount) FILTER (WHERE a.component = 'PRINCIPAL' AND a.reversal_id IS NULL), 0) AS principal,
                                COALESCE(SUM(a.amount) FILTER (WHERE a.component = 'INTEREST'  AND a.reversal_id IS NULL), 0) AS interest,
                                COALESCE(SUM(a.amount) FILTER (WHERE a.component = 'PENALTY'   AND a.reversal_id IS NULL), 0) AS penalty,
@@ -138,7 +136,7 @@ class DashboardRepository {
                         LEFT JOIN repayment_reversal rv ON rv.tenant_id = r.tenant_id AND rv.repayment_id = r.id
                         LEFT JOIN payment_allocation a ON a.tenant_id = r.tenant_id AND a.repayment_id = r.id
                         WHERE r.tenant_id = :tenant AND r.payment_date BETWEEN :from AND :to
-                        GROUP BY r.id, b.id, rv.id
+                        GROUP BY r.id, l.id, b.id, rv.id
                         ORDER BY r.payment_date, r.recorded_at
                         """)
                 .param("tenant", tenantId)
@@ -146,9 +144,9 @@ class DashboardRepository {
                 .param("to", to)
                 .query((rs, i) -> new PaymentRow(
                         rs.getObject("payment_date", LocalDate.class), instant(rs.getObject("recorded_at", OffsetDateTime.class)),
-                        rs.getObject("loan_id", UUID.class), rs.getString("full_name"), rs.getBigDecimal("amount"),
-                        rs.getString("method"), rs.getString("reference"), rs.getBigDecimal("principal"),
-                        rs.getBigDecimal("interest"), rs.getBigDecimal("penalty"),
+                        rs.getObject("loan_id", UUID.class), rs.getInt("loan_number"), rs.getString("full_name"),
+                        rs.getBigDecimal("amount"), rs.getString("method"), rs.getString("reference"),
+                        rs.getBigDecimal("principal"), rs.getBigDecimal("interest"), rs.getBigDecimal("penalty"),
                         instant(rs.getObject("reversed_at", OffsetDateTime.class)), rs.getString("reversal_reason")))
                 .list();
     }

@@ -35,6 +35,15 @@ public class Borrower {
     @Column(name = "phone_normalized", nullable = false)
     private String phoneNormalized;
 
+    private String email;
+
+    @Column(name = "national_id")
+    private String nationalId;
+
+    /** Nothing in the system verifies an ID number yet, so this stays NOT_VERIFIED. */
+    @Column(name = "kyc_status", nullable = false)
+    private String kycStatus;
+
     private String note;
 
     @Enumerated(EnumType.STRING)
@@ -50,16 +59,19 @@ public class Borrower {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    protected Borrower() { }    // required by JPA
+    protected Borrower() { }
 
-    static Borrower create(UUID tenantId, UUID createdBy, String fullName, String phone,
-                           String phoneNormalized, String note) {
+    static Borrower create(UUID tenantId, UUID createdBy, String fullName, String phone, String phoneNormalized,
+                           String email, String nationalId, String note) {
         Borrower b = new Borrower();
         b.tenantId = tenantId;
         b.createdBy = createdBy;
         b.fullName = fullName;
         b.phone = phone;
         b.phoneNormalized = phoneNormalized;
+        b.email = email;
+        b.nationalId = nationalId;
+        b.kycStatus = "NOT_VERIFIED";
         b.note = note;
         b.status = BorrowerStatus.ACTIVE;
         b.createdAt = Instant.now();
@@ -68,12 +80,19 @@ public class Borrower {
     }
 
     /** Applies the new values and returns the names of the fields that actually changed. */
-    List<String> applyChanges(String newName, String newPhone, String newPhoneNormalized, String newNote) {
+    List<String> applyChanges(String newName, String newPhone, String newPhoneNormalized, String newEmail,
+                              String newNationalId, String newNote) {
         List<String> changed = new ArrayList<>();
         if (!Objects.equals(fullName, newName)) { fullName = newName; changed.add("fullName"); }
         if (!Objects.equals(phoneNormalized, newPhoneNormalized)) { changed.add("phone"); }
         phone = newPhone;
         phoneNormalized = newPhoneNormalized;
+        if (!Objects.equals(email, newEmail)) { email = newEmail; changed.add("email"); }
+        if (!Objects.equals(nationalId, newNationalId)) {
+            nationalId = newNationalId;
+            kycStatus = "NOT_VERIFIED";
+            changed.add("nationalId");
+        }
         if (!Objects.equals(note, newNote)) { note = newNote; changed.add("note"); }
         if (!changed.isEmpty()) updatedAt = Instant.now();
         return changed;
@@ -88,6 +107,9 @@ public class Borrower {
     public String getFullName() { return fullName; }
     public String getPhone() { return phone; }
     public String getPhoneNormalized() { return phoneNormalized; }
+    public String getEmail() { return email; }
+    public String getNationalId() { return nationalId; }
+    public String getKycStatus() { return kycStatus; }
     public String getNote() { return note; }
     public BorrowerStatus getStatus() { return status; }
     public Instant getCreatedAt() { return createdAt; }

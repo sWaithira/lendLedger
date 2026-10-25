@@ -47,7 +47,6 @@ public class LoanService {
 
     // ------------------------------------------------------------------ preview and create
 
-    /** Shows exactly what would be saved, calculated by the same engine, without saving anything. */
     @Transactional(readOnly = true)
     public LoanDtos.Preview preview(LoanDtos.PreviewRequest request) {
         Quote quote = quote(request.productId(), request.principal(), request.issueDate(), request.termPeriods());
@@ -73,17 +72,18 @@ public class LoanService {
         LoanRepository.RuleInfo rule = quote.rule();
 
         UUID loanId = UUID.randomUUID();
-        loans.insertLoan(loanId, user.tenantId(), request.borrowerId(), request.productId(), rule.ruleVersionId(),
-                request.principal(), rule.currency(), request.issueDate(), request.termPeriods(),
-                terms.dueDate(), AuditJson.toJson(snapshot(rule, terms)), user.userId());
+        int loanNumber = loans.nextLoanNumber(user.tenantId());
+        loans.insertLoan(loanId, loanNumber, user.tenantId(), request.borrowerId(), request.productId(),
+                rule.ruleVersionId(), request.principal(), rule.currency(), request.issueDate(),
+                request.termPeriods(), terms.dueDate(), AuditJson.toJson(snapshot(rule, terms)), user.userId());
 
-        // Term charges are assessed at origination and stored, so the ledger shows them from day one.
         for (AssessedCharge c : ChargeAssessor.assess(terms, request.issueDate())) {
             loans.insertCharge(user.tenantId(), loanId, c.type().name(), c.kind().name(), c.periodNumber(),
                     c.effectiveDate(), c.amount(), rule.ruleVersionId());
         }
 
         Map<String, String> detail = new LinkedHashMap<>();
+        detail.put("loan", LoanDtos.reference(loanNumber));
         detail.put("principal", request.principal().toPlainString());
         detail.put("termPeriods", String.valueOf(request.termPeriods()));
         detail.put("ruleVersion", String.valueOf(rule.versionNumber()));
@@ -164,20 +164,21 @@ public class LoanService {
 
     LoanDtos.LoanView toView(LoanRow row, Map<BalanceComponent, BigDecimal> allocated, LocalDate today) {
         LoanTerms terms = row.terms();
-        // Accrual stops on the settlement date (ADR-01).
         LocalDate asOf = (row.settledOn() != null && row.settledOn().isBefore(today)) ? row.settledOn() : today;
         Outstanding owed = LedgerBalance.compute(terms, ChargeAssessor.assess(terms, asOf), allocated);
 
         boolean open = "ACTIVE".equals(row.status());
         boolean overdue = open && !owed.isSettled() && ChargeAssessor.isOverdue(terms, today);
-        long daysOverdue = overdue ? ChronoUnit.DAYS.between(row.dueDate(), today) : 0;
+        // Days are counted from the end of the lender's grace period: the day the loan really became overdue.
+        long daysOverdue = overdue ? ChronoUnit.DAYS.between(terms.overdueStart(), today) : 0;
         String display;
         if (!open) display = row.status();
         else if (overdue) display = "OVERDUE";
+        else if (today.isAfter(row.dueDate())) display = "GRACE";
         else if (!today.isBefore(row.dueDate().minusDays(DUE_SOON_DAYS))) display = "DUE_SOON";
         else display = "CURRENT";
 
-        return new LoanDtos.LoanView(row.id(), row.borrowerId(), row.borrowerName(), row.productId(),
+        return new LoanDtos.LoanView(row.id(), row.loanNumber(), row.borrowerId(), row.borrowerName(), row.productId(),
                 row.productName(), row.principal(), row.currency(), row.issueDate(), row.termPeriods(),
                 row.dueDate(), row.ratePerPeriod(), row.ruleVersionNumber(), row.status(), display, daysOverdue,
                 asOf, new LoanDtos.BalanceView(owed.principal(), owed.interest(), owed.penalty(), owed.total()));
