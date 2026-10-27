@@ -28,7 +28,7 @@ class LoanRepository {
                     int graceDays, BigDecimal penaltyRatePerPeriod, BigDecimal penaltyCap,
                     List<BalanceComponent> allocationOrder, RoundingMode roundingMode,
                     String productName, String currency, BigDecimal minPrincipal, BigDecimal maxPrincipal,
-                    int maxTermPeriods) { }
+                    int maxTermPeriods, String periodUnit) { }
 
     private record AllocationSum(UUID loanId, BalanceComponent component, BigDecimal total) { }
 
@@ -36,7 +36,8 @@ class LoanRepository {
             SELECT l.id, l.loan_number, l.borrower_id, b.full_name AS borrower_name, l.product_id, p.name AS product_name,
                    l.rule_version_id, r.version_number, l.principal, l.currency, l.issue_date, l.term_periods,
                    l.due_date, l.status, l.settled_on, r.rate_per_period, r.grace_days,
-                   r.penalty_rate_per_period, r.penalty_cap, r.allocation_order, r.rounding_mode
+                   r.penalty_rate_per_period, r.penalty_cap, r.allocation_order, r.rounding_mode,
+                                          r.interest_method, r.period_unit
             FROM loan l
             JOIN borrower b ON b.tenant_id = l.tenant_id AND b.id = l.borrower_id
             JOIN loan_product p ON p.tenant_id = l.tenant_id AND p.id = l.product_id
@@ -141,7 +142,7 @@ class LoanRepository {
         return jdbc.sql("""
                         SELECT r.id, r.version_number, r.interest_method, r.rate_per_period, r.grace_days,
                                r.penalty_rate_per_period, r.penalty_cap, r.allocation_order, r.rounding_mode,
-                               p.name, p.currency, p.min_principal, p.max_principal, p.max_term_periods
+                               p.name, p.currency, p.min_principal, p.max_principal, p.max_term_periods, r.period_unit
                         FROM loan_product p
                         JOIN loan_rule_version r ON r.tenant_id = p.tenant_id AND r.product_id = p.id
                         WHERE p.tenant_id = :tenant AND p.id = :product AND p.active
@@ -158,8 +159,9 @@ class LoanRepository {
                         readOrder(rs), RoundingMode.valueOf(rs.getString("rounding_mode")),
                         rs.getString("name"), rs.getString("currency"),
                         rs.getBigDecimal("min_principal"), rs.getBigDecimal("max_principal"),
-                        rs.getInt("max_term_periods")))
-                .optional();
+                        rs.getInt("max_term_periods"), rs.getString("period_unit"))) followed by
+        .optional();
+
     }
 
     List<LoanDtos.ProductView> listProducts(UUID tenantId, LocalDate on) {
@@ -300,8 +302,8 @@ class LoanRepository {
                 rs.getObject("settled_on", LocalDate.class),
                 rs.getBigDecimal("rate_per_period"), rs.getInt("grace_days"),
                 rs.getBigDecimal("penalty_rate_per_period"), rs.getBigDecimal("penalty_cap"),
-                readOrder(rs), RoundingMode.valueOf(rs.getString("rounding_mode")));
-    }
+                readOrder(rs), RoundingMode.valueOf(rs.getString("rounding_mode")), followed by
+                rs.getString("interest_method"), rs.getString("period_unit"));
 
     private static List<BalanceComponent> readOrder(ResultSet rs) throws SQLException {
         Array array = rs.getArray("allocation_order");

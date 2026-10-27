@@ -70,7 +70,7 @@ class FixedFeeEngineTest {
     void penaltyCapIsCumulative() {
         LoanTerms t = LoanTerms.fixedFee(new BigDecimal("1000.00"), LocalDate.of(2026, 10, 1), 1,
                 PeriodUnit.MONTH, new BigDecimal("0.30")).withPenalty(BigDecimal.ONE, new BigDecimal("450"));
-        assertDue(due(t, LocalDate.of(2026, 12, 1)), "2050");    // 1300 + 300 + 150 (capped)
+        assertDue(due(t, LocalDate.of(2026, 12, 1)), "1750");    // 1000 + 300 interest + 300 + 150 penalties (cap 450)
     }
 
     @Test
