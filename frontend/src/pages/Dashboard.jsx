@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth.jsx'
 import BarChart from '../components/BarChart.jsx'
+import MonthlyChart from '../components/MonthlyChart.jsx'
 import { Empty, ErrorNote, Loading, PageHead, Segmented } from '../components/ui.jsx'
 import { formatDate, formatMoney, loanNumber } from '../format.js'
 import { useFetch } from '../hooks.js'
@@ -33,6 +34,7 @@ function toPoints(series, granularity) {
 export default function Dashboard() {
     const { user, can } = useAuth()
     const [range, setRange] = useState('6m')
+    const [months, setMonths] = useState(6)
     const [today] = useState(() =>
         new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date()),
     )
@@ -40,6 +42,7 @@ export default function Dashboard() {
 
     const summary = useFetch(`/api/v1/dashboard/summary?from=${from}&to=${to}`)
     const series = useFetch(`/api/v1/dashboard/collections?from=${from}&to=${to}&granularity=${granularity}`)
+    const monthly = useFetch(can('REPORT_VIEW') ? `/api/v1/dashboard/monthly?months=${months}` : null)
     const overdue = useFetch('/api/v1/overdue?size=3')
 
     const s = summary.data
@@ -83,8 +86,8 @@ export default function Dashboard() {
                             <small>Overdue</small>
                             <strong className="money">{formatMoney(p.overdueOutstanding.total)}</strong>
                             <span>
-                {p.overdueLoans === 0 ? 'Nothing overdue' : `${p.overdueLoans} loan${p.overdueLoans === 1 ? '' : 's'} · see who to call`}
-              </span>
+                                {p.overdueLoans === 0 ? 'Nothing overdue' : `${p.overdueLoans} loan${p.overdueLoans === 1 ? '' : 's'} · see who to call`}
+                            </span>
                         </Link>
                         <div className="tile">
                             <small>Due within 7 days</small>
@@ -92,21 +95,46 @@ export default function Dashboard() {
                             <span>loan{p.dueSoonLoans === 1 ? '' : 's'}</span>
                         </div>
                         <div className="tile">
-                            <small>Collected, this month</small>
-                            <strong className="money">{formatMoney(s.collections.total)}</strong>
-                            <span>
-                {formatMoney(s.collections.interest)} interest · {formatMoney(s.collections.principal)} principal
-              </span>
+                            <small>Loans issued</small>
+                            <strong className="money">{s.disbursements.loans}</strong>
+                            <span>{period.toLowerCase()}</span>
                         </div>
                         <div className="tile">
-                            <small>Lent, this month</small>
+                            <small>Principal disbursed</small>
                             <strong className="money">{formatMoney(s.disbursements.principal)}</strong>
+                            <span>{period.toLowerCase()}</span>
+                        </div>
+                        <div className="tile">
+                            <small>Repayments received</small>
+                            <strong className="money">{formatMoney(s.collections.total)}</strong>
                             <span>
-                {s.disbursements.loans} new loan{s.disbursements.loans === 1 ? '' : 's'}
-              </span>
+                                {formatMoney(s.collections.interest)} interest · {formatMoney(s.collections.principal)} principal
+                            </span>
                         </div>
                     </div>
                 </>
+            )}
+
+            {can('REPORT_VIEW') && (
+                <section className="card" aria-label="Lent and collected by month">
+                    <div className="chart-head">
+                        <h2>Lent and collected, by month</h2>
+                        <Segmented
+                            label="Months shown"
+                            value={months}
+                            onChange={setMonths}
+                            options={[
+                                { value: 6, label: '6 months' },
+                                { value: 12, label: '12 months' },
+                            ]}
+                        />
+                    </div>
+                    <ErrorNote error={monthly.error} onRetry={monthly.reload} />
+                    {monthly.data && <MonthlyChart points={monthly.data} label={`Lent and collected, last ${months} months`} />}
+                    <p className="muted" style={{ fontSize: '0.8125rem' }}>
+                        Lent is the principal given out that month. Collected is split into principal, interest and penalty. A reversed payment is taken off in the month the reversal was recorded.
+                    </p>
+                </section>
             )}
 
             <section className="card" aria-label="Collections">
@@ -143,13 +171,14 @@ export default function Dashboard() {
                             <div className="grow">
                                 <div className="title">{o.borrowerName}</div>
                                 <div className="sub">
-                                    {loanNumber(o.loanNumber)} · {o.daysOverdue} days overdue · due {formatDate(o.dueDate)}
+                                    {loanNumber(o.loanNumber)} · {o.fixedFee ? `Month ${o.penaltyMonth + 1}` : `${o.daysOverdue} days overdue`} · due{' '}
+                                    {formatDate(o.dueDate)}
                                 </div>
                             </div>
                             <div className="money title">{formatMoney(o.outstanding.total)}</div>
                             <span className="chev" aria-hidden="true">
-                ›
-              </span>
+                                ›
+                            </span>
                         </Link>
                     ))}
                     <Link to="/overdue" className="row more">

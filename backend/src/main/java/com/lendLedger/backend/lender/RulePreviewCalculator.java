@@ -33,9 +33,9 @@ public final class RulePreviewCalculator {
                 penaltyPerPeriod, penaltyCap, LoanTerms.DEFAULT_ORDER, RoundingMode.HALF_UP,
                 PeriodUnit.MONTH, InterestModel.FIXED_FEE);
         List<Scenario> result = new ArrayList<>();
-        result.add(scenario("Paid on time", terms, terms.dueDate()));
-        result.add(scenario("1 month overdue (1 penalty)", terms, ChargeAssessor.penaltyDate(terms, 1)));
-        result.add(scenario("2 months overdue (2 penalties)", terms, ChargeAssessor.penaltyDate(terms, 2)));
+        result.add(scenario("Month 1 (paid on time)", terms, terms.dueDate()));
+        result.add(scenario("Month 2 (1 month overdue)", terms, ChargeAssessor.penaltyDate(terms, 1)));
+        result.add(scenario("Month 3 (2 months overdue)", terms, ChargeAssessor.penaltyDate(terms, 2)));
         return result;
     }
 

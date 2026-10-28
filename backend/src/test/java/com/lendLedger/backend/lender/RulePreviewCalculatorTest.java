@@ -18,7 +18,7 @@ class RulePreviewCalculatorTest {
         List<RulePreviewCalculator.Scenario> s = RulePreviewCalculator.scenarios(
                 new BigDecimal("3223.00"), 1, new BigDecimal("0.30"), 0, BigDecimal.ONE, null);
         assertThat(s).hasSize(3);
-        assertThat(s.get(0).label()).isEqualTo("Paid on time");
+        assertThat(s.get(0).label()).isEqualTo("Month 1 (paid on time)");
         assertTotal(s.get(0), "4190");
         assertThat(s.get(0).penalty()).isEqualByComparingTo("0");
         assertTotal(s.get(1), "5157");

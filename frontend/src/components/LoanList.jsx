@@ -6,7 +6,7 @@ import { StatusBadge } from './ui.jsx'
 function overdueText(l) {
     if (l.daysOverdue <= 0) return ''
     return l.interestOnce && l.penaltyMonth > 0
-        ? ` · Penalty month ${l.penaltyMonth}`
+        ? ` · Month ${l.penaltyMonth + 1}`
         : ` · ${l.daysOverdue} days overdue`
 }
 

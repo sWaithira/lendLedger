@@ -76,7 +76,7 @@ class DashboardRepository {
                         LEFT JOIN repayment_reversal rv ON rv.tenant_id = a.tenant_id AND rv.id = a.reversal_id
                         CROSS JOIN LATERAL (SELECT CASE WHEN a.reversal_id IS NULL THEN r.payment_date
                                                         ELSE (rv.reversed_at AT TIME ZONE :zone)::date END AS d) eff
-                        WHERE a.tenant_id = :tenant AND eff.d BETWEEN :from AND :to
+                        WHERE a.tenant_id = :tenant AND r.method <> 'ROLLOVER' AND eff.d BETWEEN :from AND :to
                         GROUP BY 1
                         ORDER BY 1
                         """)

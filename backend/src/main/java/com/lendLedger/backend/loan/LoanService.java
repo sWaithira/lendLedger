@@ -35,7 +35,7 @@ public class LoanService {
     private static final int MAX_PAGE_SIZE = 100;
     private static final int DUE_SOON_DAYS = 7;
 
-    private record Quote(LoanRepository.RuleInfo rule, LoanTerms terms) { }
+    record Quote(LoanRepository.RuleInfo rule, LoanTerms terms) { }
 
     private final LoanRepository loans;
     private final AuditService audit;
@@ -133,7 +133,7 @@ public class LoanService {
 
     // ------------------------------------------------------------------ helpers
 
-    private Quote quote(UUID productId, BigDecimal principal, LocalDate issueDate, int termPeriods) {
+    Quote quote(UUID productId, BigDecimal principal, LocalDate issueDate, int termPeriods) {
         UUID tenantId = CurrentUser.tenantId();
         if (issueDate.isAfter(clock.today())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "issue_date_in_future", "The issue date cannot be in the future");
@@ -192,7 +192,7 @@ public class LoanService {
                 penaltyMonth, dueDateAmount, "FIXED_FEE".equals(row.interestMethod()));
     }
 
-    private static Map<String, String> snapshot(LoanRepository.RuleInfo rule, LoanTerms terms) {
+    static Map<String, String> snapshot(LoanRepository.RuleInfo rule, LoanTerms terms) {
         Map<String, String> s = new LinkedHashMap<>();
         s.put("ruleVersionId", rule.ruleVersionId().toString());
         s.put("ruleVersionNumber", String.valueOf(rule.versionNumber()));

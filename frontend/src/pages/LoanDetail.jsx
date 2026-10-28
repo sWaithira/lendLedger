@@ -98,7 +98,7 @@ export default function LoanDetail() {
                                     <dt>Overdue</dt>
                                     <dd>
                                         {l.penaltyMonth > 0
-                                            ? `Penalty month ${l.penaltyMonth} · due ${formatDate(l.dueDate)}`
+                                            ? `Month ${l.penaltyMonth + 1} · due ${formatDate(l.dueDate)}`
                                             : `${l.daysOverdue} days`}
                                     </dd>
                                 </>

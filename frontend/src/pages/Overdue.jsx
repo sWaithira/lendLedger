@@ -44,7 +44,7 @@ export default function Overdue() {
                                         <div className="sub">
                                             {loanNumber(o.loanNumber)} ·{' '}
                                             <span className="late">
-                                                {o.fixedFee ? `Penalty month ${o.penaltyMonth}` : `${o.daysOverdue} days overdue`}
+                                                {o.fixedFee ? `Month ${o.penaltyMonth + 1}` : `${o.daysOverdue} days overdue`}
                                             </span>{' '}
                                             · due {formatDate(o.dueDate)} ·{' '}
                                             {o.lastPaymentDate ? `last payment ${formatDate(o.lastPaymentDate)}` : 'no payments yet'}

@@ -175,7 +175,7 @@ function productTerms(product) {
 }
 function Charge({ c }) {
     let label
-    if (c.type === 'PENALTY') label = `Late penalty, month ${c.period}`
+    if (c.type === 'PENALTY') label = `Late penalty, month ${c.period + 1}`
     else label = c.kind === 'TERM' && c.period === 1 ? 'Interest' : `Interest, month ${c.period}`
     return (
         <>
