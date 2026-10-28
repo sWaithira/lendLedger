@@ -29,7 +29,7 @@ class MonthlyReportRepository {
                                COUNT(*) AS loans,
                                COALESCE(SUM(principal), 0) AS principal
                         FROM loan
-                        WHERE tenant_id = :tenant AND status <> 'CANCELLED' AND issue_date BETWEEN :from AND :to
+                        WHERE tenant_id = :tenant AND status <> 'CANCELLED' AND issue_date BETWEEN :from AND :to AND rolled_from_loan_id IS NULL
                         GROUP BY 1
                         ORDER BY 1
                         """)

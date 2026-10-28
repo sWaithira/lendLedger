@@ -28,19 +28,21 @@ class MonthlyReportService {
         this.clock = clock;
     }
 
-    /** The last {@code months} calendar months including this one, with empty months filled in as zeros. */
+    /** {@code months} calendar months ending with the month of {@code end} (default: this month), empty months as zeros. */
     @Transactional(readOnly = true)
-    List<MonthlyReportDtos.MonthPoint> monthly(int months) {
+    List<MonthlyReportDtos.MonthPoint> monthly(int months, LocalDate end) {
         UUID tenantId = CurrentUser.tenantId();
         ZoneId zone = clock.zone();
-        int count = Math.min(Math.max(months, 1), MAX_MONTHS);
         LocalDate today = LocalDate.now(zone);
-        LocalDate first = today.withDayOfMonth(1).minusMonths(count - 1L);
+        LocalDate last = (end == null || end.isAfter(today)) ? today : end;
+        int count = Math.min(Math.max(months, 1), MAX_MONTHS);
+        LocalDate first = last.withDayOfMonth(1).minusMonths(count - 1L);
+        LocalDate to = last.withDayOfMonth(last.lengthOfMonth());
 
         Map<LocalDate, MonthlyReportRepository.Lent> lent = new HashMap<>();
-        for (MonthlyReportRepository.Lent l : repo.lent(tenantId, first, today)) lent.put(l.monthStart(), l);
+        for (MonthlyReportRepository.Lent l : repo.lent(tenantId, first, to)) lent.put(l.monthStart(), l);
         Map<LocalDate, MonthlyReportRepository.Collected> collected = new HashMap<>();
-        for (MonthlyReportRepository.Collected c : repo.collected(tenantId, zone, first, today)) collected.put(c.monthStart(), c);
+        for (MonthlyReportRepository.Collected c : repo.collected(tenantId, zone, first, to)) collected.put(c.monthStart(), c);
 
         List<MonthlyReportDtos.MonthPoint> out = new ArrayList<>();
         for (int i = 0; i < count; i++) {

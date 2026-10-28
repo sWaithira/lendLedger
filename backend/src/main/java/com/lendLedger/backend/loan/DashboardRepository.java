@@ -54,7 +54,7 @@ class DashboardRepository {
         return jdbc.sql("""
                         SELECT count(*) AS n, COALESCE(SUM(principal), 0) AS total
                         FROM loan
-                        WHERE tenant_id = :tenant AND issue_date BETWEEN :from AND :to AND status <> 'CANCELLED'
+                        WHERE tenant_id = :tenant AND issue_date BETWEEN :from AND :to AND status <> 'CANCELLED' AND rolled_from_loan_id IS NULL
                         """)
                 .param("tenant", tenantId)
                 .param("from", from)
@@ -135,7 +135,7 @@ class DashboardRepository {
                         JOIN borrower b ON b.tenant_id = l.tenant_id AND b.id = l.borrower_id
                         LEFT JOIN repayment_reversal rv ON rv.tenant_id = r.tenant_id AND rv.repayment_id = r.id
                         LEFT JOIN payment_allocation a ON a.tenant_id = r.tenant_id AND a.repayment_id = r.id
-                        WHERE r.tenant_id = :tenant AND r.payment_date BETWEEN :from AND :to
+                        WHERE r.tenant_id = :tenant AND r.payment_date BETWEEN :from AND :to AND r.method <> 'ROLLOVER'
                         GROUP BY r.id, l.id, b.id, rv.id
                         ORDER BY r.payment_date, r.recorded_at
                         """)

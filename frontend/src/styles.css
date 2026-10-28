@@ -327,3 +327,7 @@ input[type="checkbox"] { width: 22px; min-height: 22px; padding: 0; flex: none; 
 
 /* Money received = green (the chart now has just lent and received) */
 .mc-received { fill: var(--green, #1a7f37); background: var(--green, #1a7f37); }
+.mc-grid { stroke: var(--text-2, #636366); stroke-opacity: 0.18; stroke-width: 1; }
+.mc-tick { font-size: 11px; fill: var(--text-2, #636366); }
+.month-nav { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 0 0 16px; }
+.month-nav strong { min-width: 9.5rem; text-align: center; }
