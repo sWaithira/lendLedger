@@ -22,7 +22,7 @@ import org.springframework.stereotype.Repository;
 
 /** Plain SQL for loans. EVERY query filters on tenant_id (ADR-05). */
 @Repository
-class LoanRepository {
+public class LoanRepository {
 
     record RuleInfo(UUID ruleVersionId, int versionNumber, String interestMethod, BigDecimal ratePerPeriod,
                     int graceDays, BigDecimal penaltyRatePerPeriod, BigDecimal penaltyCap,
@@ -159,9 +159,8 @@ class LoanRepository {
                         readOrder(rs), RoundingMode.valueOf(rs.getString("rounding_mode")),
                         rs.getString("name"), rs.getString("currency"),
                         rs.getBigDecimal("min_principal"), rs.getBigDecimal("max_principal"),
-                        rs.getInt("max_term_periods"), rs.getString("period_unit"))) followed by
-        .optional();
-
+                        rs.getInt("max_term_periods"), rs.getString("period_unit")))
+                .optional();
     }
 
     List<LoanDtos.ProductView> listProducts(UUID tenantId, LocalDate on) {
@@ -302,8 +301,9 @@ class LoanRepository {
                 rs.getObject("settled_on", LocalDate.class),
                 rs.getBigDecimal("rate_per_period"), rs.getInt("grace_days"),
                 rs.getBigDecimal("penalty_rate_per_period"), rs.getBigDecimal("penalty_cap"),
-                readOrder(rs), RoundingMode.valueOf(rs.getString("rounding_mode")), followed by
+                readOrder(rs), RoundingMode.valueOf(rs.getString("rounding_mode")),
                 rs.getString("interest_method"), rs.getString("period_unit"));
+    }
 
     private static List<BalanceComponent> readOrder(ResultSet rs) throws SQLException {
         Array array = rs.getArray("allocation_order");

@@ -165,17 +165,18 @@ export default function LoanNew() {
 }
 
 function productTerms(product) {
-    const interest = `${percent(product.ratePerPeriod)} interest per month`
+    const interest = `${percent(product.ratePerPeriod)} interest, charged once`
     const penalty =
         product.penaltyRatePerPeriod > 0
-            ? `${percent(product.penaltyRatePerPeriod)} late penalty for each month overdue`
+            ? `late penalty of ${percent(product.penaltyRatePerPeriod)} of the interest for each month overdue`
             : 'no late penalty'
     const grace = product.graceDays > 0 ? ` · ${product.graceDays} days grace` : ''
     return `${interest} · ${penalty}${grace}`
 }
-
 function Charge({ c }) {
-    const label = `${c.type === 'INTEREST' ? 'Interest' : 'Penalty'}, month ${c.period}`
+    let label
+    if (c.type === 'PENALTY') label = `Late penalty, month ${c.period}`
+    else label = c.kind === 'TERM' && c.period === 1 ? 'Interest' : `Interest, month ${c.period}`
     return (
         <>
             <dt>{label}</dt>

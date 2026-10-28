@@ -183,10 +183,13 @@ public class LoanService {
         else if (!today.isBefore(row.dueDate().minusDays(DUE_SOON_DAYS))) display = "DUE_SOON";
         else display = "CURRENT";
 
+        int penaltyMonth = overdue ? ChargeAssessor.completedOverduePeriods(terms, today) : 0;
+        BigDecimal dueDateAmount = terms.principal().add(sum(ChargeAssessor.assess(terms, row.issueDate())));
         return new LoanDtos.LoanView(row.id(), row.loanNumber(), row.borrowerId(), row.borrowerName(), row.productId(),
                 row.productName(), row.principal(), row.currency(), row.issueDate(), row.termPeriods(),
                 row.dueDate(), row.ratePerPeriod(), row.ruleVersionNumber(), row.status(), display, daysOverdue,
-                asOf, new LoanDtos.BalanceView(owed.principal(), owed.interest(), owed.penalty(), owed.total()));
+                asOf, new LoanDtos.BalanceView(owed.principal(), owed.interest(), owed.penalty(), owed.total()),
+                penaltyMonth, dueDateAmount, "FIXED_FEE".equals(row.interestMethod()));
     }
 
     private static Map<String, String> snapshot(LoanRepository.RuleInfo rule, LoanTerms terms) {

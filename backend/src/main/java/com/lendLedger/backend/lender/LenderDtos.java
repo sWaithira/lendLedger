@@ -24,15 +24,15 @@ public final class LenderDtos {
     /** Percentages as a person types them (30 means 30%). The server converts them to fractions. */
     public record RuleInput(
             @NotNull(message = "Interest rate is required")
-            @DecimalMin(value = "0.01", message = "Interest must be at least 0.01% a month")
-            @DecimalMax(value = "100", message = "Interest cannot be more than 100% a month")
+            @DecimalMin(value = "0.01", message = "Interest must be at least 0.01%")
+            @DecimalMax(value = "100", message = "Interest cannot be more than 100%")
             @Digits(integer = 3, fraction = 4, message = "Use at most 4 decimal places for the interest rate") BigDecimal ratePercent,
             @NotNull(message = "Grace period is required")
             @Min(value = 0, message = "Grace period cannot be negative")
             @Max(value = 60, message = "Grace period cannot be more than 60 days") Integer graceDays,
             @NotNull(message = "Late penalty is required")
             @DecimalMin(value = "0", message = "Late penalty cannot be negative")
-            @DecimalMax(value = "100", message = "Late penalty cannot be more than 100%")
+            @DecimalMax(value = "300", message = "Late penalty cannot be more than 300%")
             @Digits(integer = 3, fraction = 4, message = "Use at most 4 decimal places for the late penalty") BigDecimal penaltyPercent,
             @DecimalMin(value = "0", message = "Penalty limit cannot be negative")
             @Digits(integer = 15, fraction = 2, message = "Use at most 2 decimal places for the penalty limit") BigDecimal penaltyCap) { }

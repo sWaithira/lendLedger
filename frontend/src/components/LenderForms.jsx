@@ -32,22 +32,28 @@ export function RuleFields({ value, onChange }) {
     const set = (key) => (e) => onChange({ ...value, [key]: e.target.value })
     return (
         <>
-            <Field label="Interest per month (%)" hint="Charged on the amount lent, for every month of the term and every month a loan is overdue.">
+            <Field
+                label="Interest (% of the amount lent)"
+                hint="Charged once per loan, however long the term. For example, 30% on 1,000 is 300."
+            >
                 <input type="number" min="0.01" max="100" step="any" value={value.ratePercent} onChange={set('ratePercent')} required />
             </Field>
             <Field label="Grace period (days)" hint="Days after the due date before a loan counts as overdue.">
                 <input type="number" min="0" max="60" step="1" value={value.graceDays} onChange={set('graceDays')} required />
             </Field>
             <div className="pair">
-                <Field label="Late penalty (% per month)" hint="Per full month overdue. 0 means none.">
-                    <input type="number" min="0" max="100" step="any" value={value.penaltyPercent} onChange={set('penaltyPercent')} required />
+                <Field
+                    label="Late penalty (% of the interest)"
+                    hint="Added for each month a loan stays overdue. 100 means the same as the interest. 0 means none."
+                >
+                    <input type="number" min="0" max="300" step="any" value={value.penaltyPercent} onChange={set('penaltyPercent')} required />
                 </Field>
-                <Field label="Penalty limit (KES)" hint="Optional.">
+                <Field label="Penalty limit (KES)" hint="Optional. The most penalty one loan can collect.">
                     <input type="number" min="0" step="any" value={value.penaltyCap} onChange={set('penaltyCap')} />
                 </Field>
             </div>
             <p className="muted" style={{ fontSize: '0.8125rem', marginBottom: 18 }}>
-                Payments are applied to penalty first, then interest, then principal.
+                Payments are applied to penalty first, then interest, then principal. Late penalties stop being added once the loan is fully paid.
             </p>
         </>
     )

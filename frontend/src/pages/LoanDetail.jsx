@@ -85,16 +85,22 @@ export default function LoanDetail() {
                         <dl className="kv">
                             <dt>Due date</dt>
                             <dd>{formatDate(l.dueDate)}</dd>
+                            <dt>Amount due by {formatDate(l.dueDate)}</dt>
+                            <dd className="money">{formatMoney(l.amountDueByDueDate)}</dd>
                             <dt>Term</dt>
                             <dd>
                                 {l.termPeriods} month{l.termPeriods === 1 ? '' : 's'}
                             </dd>
                             <dt>Interest</dt>
-                            <dd>{percent(l.ratePerPeriod)} per month</dd>
+                            <dd>{percent(l.ratePerPeriod)}{l.interestOnce ? ', charged once' : ' per month'}</dd>
                             {l.daysOverdue > 0 && (
                                 <>
                                     <dt>Overdue</dt>
-                                    <dd>{l.daysOverdue} days</dd>
+                                    <dd>
+                                        {l.penaltyMonth > 0
+                                            ? `Penalty month ${l.penaltyMonth} · due ${formatDate(l.dueDate)}`
+                                            : `${l.daysOverdue} days`}
+                                    </dd>
                                 </>
                             )}
                         </dl>

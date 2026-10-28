@@ -2,6 +2,14 @@ import { Link } from 'react-router-dom'
 import { formatDate, formatMoney, loanNumber } from '../format.js'
 import { StatusBadge } from './ui.jsx'
 
+/** New-rule loans say which penalty month they are in; older loans keep the day count. */
+function overdueText(l) {
+    if (l.daysOverdue <= 0) return ''
+    return l.interestOnce && l.penaltyMonth > 0
+        ? ` · Penalty month ${l.penaltyMonth}`
+        : ` · ${l.daysOverdue} days overdue`
+}
+
 export default function LoanList({ loans, showBorrower = true, view = 'list' }) {
     if (view === 'cards') {
         return (
@@ -16,7 +24,7 @@ export default function LoanList({ loans, showBorrower = true, view = 'list' }) 
                         <div className="sub">still owed{showBorrower ? ` · lent ${formatMoney(l.principal)}` : ''}</div>
                         <div className="sub">
                             {loanNumber(l.loanNumber)} · Due {formatDate(l.dueDate)}
-                            {l.daysOverdue > 0 ? ` · ${l.daysOverdue} days overdue` : ''}
+                            {overdueText(l)}
                         </div>
                     </Link>
                 ))}
@@ -32,7 +40,7 @@ export default function LoanList({ loans, showBorrower = true, view = 'list' }) 
                         <div className="sub">
                             {loanNumber(l.loanNumber)} · {showBorrower ? `${formatMoney(l.principal)} · ` : ''}
                             Due {formatDate(l.dueDate)}
-                            {l.daysOverdue > 0 ? ` · ${l.daysOverdue} days overdue` : ''}
+                            {overdueText(l)}
                         </div>
                     </div>
                     <div className="right">
@@ -40,8 +48,8 @@ export default function LoanList({ loans, showBorrower = true, view = 'list' }) 
                         <StatusBadge status={l.displayStatus} />
                     </div>
                     <span className="chev" aria-hidden="true">
-            ›
-          </span>
+                        ›
+                    </span>
                 </Link>
             ))}
         </div>

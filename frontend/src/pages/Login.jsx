@@ -3,6 +3,7 @@ import { Link, Navigate, useLocation } from 'react-router-dom'
 import { describeError } from '../api.js'
 import { useAuth } from '../auth.jsx'
 import { Button, Field } from '../components/ui.jsx'
+import PasswordInput from '../components/PasswordInput.jsx'
 
 export default function Login() {
     const { user, login } = useAuth()
@@ -50,7 +51,13 @@ export default function Login() {
                     <input type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus={!location.state?.email} />
                 </Field>
                 <Field label="Password">
-                    <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required autoFocus={Boolean(location.state?.email)} />
+                    <PasswordInput
+                        autoComplete="current-password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        autoFocus={Boolean(location.state?.email)}
+                    />
                 </Field>
                 <Button type="submit" busy={busy}>
                     Sign in

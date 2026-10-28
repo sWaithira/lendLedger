@@ -71,7 +71,7 @@ class LenderRepository {
                 .update();
     }
 
-    /** Inserts an APPROVED FLAT rule version. The actor is both creator and approver (one owner, no second pair of eyes yet). */
+    /** Inserts an APPROVED FIXED_FEE rule version. The actor is both creator and approver (one owner, no second pair of eyes yet). */
     void insertRule(UUID id, UUID tenantId, UUID productId, int versionNumber, LocalDate effectiveFrom,
                     BigDecimal ratePerPeriod, int graceDays, BigDecimal penaltyRatePerPeriod, BigDecimal penaltyCap,
                     UUID actorId, String reason) {
@@ -80,7 +80,7 @@ class LenderRepository {
                                interest_method, rate_per_period, grace_days, penalty_rate_per_period, penalty_cap,
                                created_by, approved_by, approved_at, change_reason)
                         VALUES (:id, :tenant, :product, :version, 'APPROVED', :from,
-                                'FLAT', :rate, :grace, :penalty, :cap, :actor, :actor, now(), :reason)
+                                'FIXED_FEE', :rate, :grace, :penalty, :cap, :actor, :actor, now(), :reason)
                         """)
                 .param("id", id)
                 .param("tenant", tenantId)
