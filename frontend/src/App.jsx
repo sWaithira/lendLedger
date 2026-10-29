@@ -5,6 +5,7 @@ import { ROLE_LABEL } from './format.js'
 import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
 import Settings from './pages/Settings.jsx'
+import ImportData from './pages/ImportData.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Overdue from './pages/Overdue.jsx'
 import Borrowers from './pages/Borrowers.jsx'
@@ -90,6 +91,7 @@ export default function App() {
                 <Route path="loans/new" element={<LoanNew />} />
                 <Route path="loans/:id" element={<LoanDetail />} />
                 <Route path="settings" element={<Settings />} />
+                <Route path="import" element={<ImportData />} />
             </Route>
             <Route path="*" element={<NotFound />} />
         </Routes>

@@ -28,6 +28,9 @@ import com.lendLedger.backend.loan.LoanService;
 import com.lendLedger.backend.security.CurrentUser;
 import com.lendLedger.backend.security.LendLedgerPrincipal;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataFormatter;
@@ -41,7 +44,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -95,9 +99,13 @@ public class ImportService {
     private final ImportRepository repo;
     private final AuditService audit;
     private final int maxRows;
+    private final TransactionTemplate tx;
+
+    @PersistenceContext
+    private EntityManager em;
 
     public ImportService(BorrowerService borrowerService, BorrowerRepository borrowers, LoanService loanService,
-                         ImportRepository repo, AuditService audit,
+                         ImportRepository repo, AuditService audit, PlatformTransactionManager txManager,
                          @Value("${lendledger.import.max-rows:2000}") int maxRows) {
         this.borrowerService = borrowerService;
         this.borrowers = borrowers;
@@ -105,12 +113,15 @@ public class ImportService {
         this.repo = repo;
         this.audit = audit;
         this.maxRows = maxRows;
+        this.tx = new TransactionTemplate(txManager);
     }
 
     // ------------------------------------------------------------------ preview and confirm
 
-    /** Checks every row and saves nothing. */
-    @Transactional(readOnly = true)
+    /**
+     * Checks every row and saves nothing. Deliberately not one big transaction: checking a loan row calls a service
+     * that throws on a bad row, and an error inside a shared transaction would mark all of it rollback-only.
+     */
     public ImportDtos.Preview preview(MultipartFile file) {
         UUID tenantId = CurrentUser.tenantId();
         byte[] bytes = bytesOf(file);
@@ -119,8 +130,10 @@ public class ImportService {
                 summarize(plan.rows), plan.rows);
     }
 
-    /** Re-checks the file and creates the valid rows. Problem rows are skipped and reported. */
-    @Transactional
+    /**
+     * Re-checks the file and creates the valid rows. Problem rows are skipped and reported. The checking runs outside
+     * a transaction (see preview); only the writing is one all-or-nothing transaction.
+     */
     public ImportDtos.Report confirm(MultipartFile file) {
         LendLedgerPrincipal user = CurrentUser.require();
         UUID tenantId = user.tenantId();
@@ -132,25 +145,9 @@ public class ImportService {
         if (plan.newBorrowers.isEmpty() && plan.newLoans.isEmpty()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "nothing_to_import", "There is nothing new to import from this file");
         }
+        String name = fileName(file);
 
-        Map<String, UUID> ids = new HashMap<>(plan.existingIds);
-        for (NewBorrower nb : plan.newBorrowers) {
-            ids.put(nb.phoneNorm(), borrowerService.create(nb.request()).id());
-        }
-        for (NewLoan nl : plan.newLoans) {
-            loanService.create(new LoanDtos.CreateRequest(ids.get(nl.phoneNorm()), nl.productId(), nl.amount(),
-                    nl.date(), nl.term()));
-        }
-
-        UUID batchId = UUID.randomUUID();
-        try {
-            repo.insertBatch(batchId, tenantId, hash, fileName(file), plan.newBorrowers.size(), plan.newLoans.size(), user.userId());
-        } catch (DuplicateKeyException e) {
-            throw alreadyImported();
-        }
-        audit.record("IMPORT_COMPLETED", "IMPORT", batchId, null, Map.of(
-                "borrowers", String.valueOf(plan.newBorrowers.size()),
-                "loans", String.valueOf(plan.newLoans.size())));
+        tx.executeWithoutResult(status -> write(plan, user, tenantId, hash, name));
 
         List<ImportDtos.RowResult> rows = plan.rows.stream()
                 .map(r -> "NEW".equals(r.status())
@@ -158,6 +155,30 @@ public class ImportService {
                         : r)
                 .toList();
         return new ImportDtos.Report(summarize(rows), rows);
+    }
+
+    /** Runs inside the transaction opened by confirm: everything is created, or nothing is. */
+    private void write(Plan plan, LendLedgerPrincipal user, UUID tenantId, String hash, String name) {
+        Map<String, UUID> ids = new HashMap<>(plan.existingIds);
+        for (NewBorrower nb : plan.newBorrowers) {
+            ids.put(nb.phoneNorm(), borrowerService.create(nb.request()).id());
+        }
+        // The loan code reads borrowers with plain SQL, so the new borrower rows must reach the database first.
+        em.flush();
+        for (NewLoan nl : plan.newLoans) {
+            loanService.create(new LoanDtos.CreateRequest(ids.get(nl.phoneNorm()), nl.productId(), nl.amount(),
+                    nl.date(), nl.term()));
+        }
+
+        UUID batchId = UUID.randomUUID();
+        try {
+            repo.insertBatch(batchId, tenantId, hash, name, plan.newBorrowers.size(), plan.newLoans.size(), user.userId());
+        } catch (DuplicateKeyException e) {
+            throw alreadyImported();
+        }
+        audit.record("IMPORT_COMPLETED", "IMPORT", batchId, null, Map.of(
+                "borrowers", String.valueOf(plan.newBorrowers.size()),
+                "loans", String.valueOf(plan.newLoans.size())));
     }
 
     // ------------------------------------------------------------------ validation
