@@ -8,6 +8,8 @@ import Settings from './pages/Settings.jsx'
 import ImportData from './pages/ImportData.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Performance from './pages/Performance.jsx'
+import Platform from './pages/Platform.jsx'
+import More from './pages/More.jsx'
 import Overdue from './pages/Overdue.jsx'
 import Borrowers from './pages/Borrowers.jsx'
 import BorrowerDetail from './pages/BorrowerDetail.jsx'
@@ -17,32 +19,44 @@ import LoanDetail from './pages/LoanDetail.jsx'
 
 function Shell() {
     const { user, logout, can } = useAuth()
+    const platform = can('PLATFORM_MANAGE')
     return (
         <div className="shell">
             <aside className="sidebar">
                 <div className="brand">LendLedger</div>
                 <nav className="nav" aria-label="Main">
-                    <NavLink to="/dashboard">
-                        <Icon name="chart" /> Overview
-                    </NavLink>
-                    {can('REPORT_VIEW') && (
-                        <NavLink to="/performance">
-                            <Icon name="chart" /> Performance
+                    {platform ? (
+                        <NavLink to="/platform">
+                            <Icon name="gear" /> Platform
                         </NavLink>
-                    )}
-                    <NavLink to="/overdue">
-                        <Icon name="alert" /> Overdue
-                    </NavLink>
-                    <NavLink to="/borrowers">
-                        <Icon name="people" /> Borrowers
-                    </NavLink>
-                    <NavLink to="/loans">
-                        <Icon name="loans" /> Loans
-                    </NavLink>
-                    {can('SETTINGS_MANAGE') && (
-                        <NavLink to="/settings">
-                            <Icon name="gear" /> Settings
-                        </NavLink>
+                    ) : (
+                        <>
+                            <NavLink to="/dashboard">
+                                <Icon name="chart" /> Overview
+                            </NavLink>
+                            {can('REPORT_VIEW') && (
+                                <NavLink className="nav-desktop" to="/performance">
+                                    <Icon name="chart" /> Performance
+                                </NavLink>
+                            )}
+                            <NavLink to="/overdue">
+                                <Icon name="alert" /> Overdue
+                            </NavLink>
+                            <NavLink to="/borrowers">
+                                <Icon name="people" /> Borrowers
+                            </NavLink>
+                            <NavLink to="/loans">
+                                <Icon name="loans" /> Loans
+                            </NavLink>
+                            {can('SETTINGS_MANAGE') && (
+                                <NavLink className="nav-desktop" to="/settings">
+                                    <Icon name="gear" /> Settings
+                                </NavLink>
+                            )}
+                            <NavLink className="nav-more" to="/more">
+                                <Icon name="gear" /> More
+                            </NavLink>
+                        </>
                     )}
                 </nav>
                 <div className="me">
@@ -68,6 +82,12 @@ function RequireAuth() {
     return <Shell />
 }
 
+/** Where "/" goes: the operator to the console, everyone else to the overview. */
+function Home() {
+    const { can } = useAuth()
+    return <Navigate to={can('PLATFORM_MANAGE') ? '/platform' : '/dashboard'} replace />
+}
+
 function NotFound() {
     return (
         <div className="signin">
@@ -88,7 +108,7 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route element={<RequireAuth />}>
-                <Route index element={<Navigate to="/dashboard" replace />} />
+                <Route index element={<Home />} />
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="performance" element={<Performance />} />
                 <Route path="overdue" element={<Overdue />} />
@@ -99,6 +119,8 @@ export default function App() {
                 <Route path="loans/:id" element={<LoanDetail />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="import" element={<ImportData />} />
+                <Route path="more" element={<More />} />
+                <Route path="platform" element={<Platform />} />
             </Route>
             <Route path="*" element={<NotFound />} />
         </Routes>

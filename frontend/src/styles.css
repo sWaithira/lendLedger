@@ -343,3 +343,7 @@ input[type="checkbox"] { width: 22px; min-height: 22px; padding: 0; flex: none; 
 .po-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; list-style: none; padding: 0; margin: 0; font-size: 0.875rem; }
 .po-legend li { display: inline-flex; align-items: center; gap: 6px; }
 .po-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+/* Phone bottom bar: five items. Performance and Settings move under More. */
+@media (max-width: 640px) { .nav .nav-desktop { display: none; } }
+@media (min-width: 641px) { .nav .nav-more { display: none; } }
