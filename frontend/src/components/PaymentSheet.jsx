@@ -124,7 +124,7 @@ export default function PaymentSheet({ loan, onClose, onDone }) {
                         ))}
                     </select>
                 </Field>
-                <Field label="Receipt or reference (optional)" hint="An M-Pesa code or bank reference. It is stored as typed and not verified.">
+                <Field label="Receipt or reference (optional)" hint="An M-Pesa code or bank reference.">
                     <input value={reference} onChange={(e) => setReference(e.target.value)} maxLength={100} autoComplete="off" />
                 </Field>
 

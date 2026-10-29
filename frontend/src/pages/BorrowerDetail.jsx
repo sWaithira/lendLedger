@@ -41,87 +41,85 @@ export default function BorrowerDetail() {
             <ErrorNote error={borrower.error} onRetry={borrower.reload} />
             <ErrorNote error={actionError} />
             {borrower.loading && !b && <Loading rows={2} />}
-            {b && (
-                <>
-                    <PageHead
-                        title={b.fullName}
-                        subtitle={`Added ${formatDate(b.createdAt.slice(0, 10))}${archived ? ' · Archived' : ''}`}
-                        actions={
-                            can('LOAN_CREATE') &&
-                            !archived && (
-                                <Link className="btn primary" to={`/loans/new?borrowerId=${b.id}`}>
-                                    New loan
-                                </Link>
-                            )
-                        }
-                    />
+            {b && <>
+                <PageHead
+                    title={b.fullName}
+                    subtitle={`Added ${formatDate(b.createdAt.slice(0, 10))}${archived ? ' · Archived' : ''}`}
+                    actions={
+                        can('LOAN_CREATE') &&
+                        !archived && (
+                            <Link className="btn primary" to={`/loans/new?borrowerId=${b.id}`}>
+                                New loan
+                            </Link>
+                        )
+                    }
+                />
 
-                    <h2 className="section-title">Contact and ID</h2>
-                    <div className="card">
-                        <dl className="kv">
-                            <dt>Phone</dt>
-                            <dd className="num">{b.phone}</dd>
-                            <dt>Email</dt>
-                            <dd>{b.email || 'Not given'}</dd>
-                            <dt>ID number</dt>
-                            <dd>
-                                {b.nationalId ? (
-                                    <>
-                                        <span className="num">{b.nationalId}</span>{' '}
-                                        <Badge tone={b.kycStatus === 'VERIFIED' ? 'green' : 'orange'}>{b.kycStatus === 'VERIFIED' ? 'Verified' : 'Not verified'}</Badge>
-                                    </>
-                                ) : (
-                                    'Not given'
-                                )}
-                            </dd>
-                        </dl>
+                <h2 className="section-title">Contact and ID</h2>
+                <div className="card">
+                    <dl className="kv">
+                        <dt>Phone</dt>
+                        <dd className="num">{b.phone}</dd>
+                        <dt>Email</dt>
+                        <dd>{b.email || 'Not given'}</dd>
+                        <dt>ID number</dt>
+                        <dd>
+                            {b.nationalId ? (
+                                <>
+                                    <span className="num">{b.nationalId}</span>{' '}
+                                    <Badge tone={b.kycStatus === 'VERIFIED' ? 'green' : 'orange'}>{b.kycStatus === 'VERIFIED' ? 'Verified' : 'Not verified'}</Badge>
+                                </>
+                            ) : (
+                                'Not given'
+                            )}
+                        </dd>
+                    </dl>
+                    {/* TODO: Add verification action here later
                         {b.nationalId && b.kycStatus !== 'VERIFIED' && (
-                            <p className="muted" style={{ marginTop: 12, fontSize: '0.8125rem' }}>
-                                The ID number is stored as entered. It has not been checked against any record.
-                            </p>
-                        )}
-                        {can('BORROWER_WRITE') && (
-                            <div style={{ marginTop: 16 }}>
-                                <Button variant="secondary" onClick={() => setEditing(true)}>
-                                    Edit details
-                                </Button>
-                            </div>
-                        )}
-                    </div>
-                    {b.note && (
-                        <>
-                            <h2 className="section-title">Note</h2>
-                            <div className="card">
-                                <p>{b.note}</p>
-                            </div>
-                        </>
-                    )}
 
-                    <h2 className="section-title">Loans</h2>
-                    {loans.loading && !loans.data && <Loading rows={2} />}
-                    {loans.data && loans.data.items.length === 0 && (
-                        <div className="list">
-                            <Empty title="No loans yet">Create the first loan for this borrower.</Empty>
-                        </div>
-                    )}
-                    {loans.data && loans.data.items.length > 0 && <LoanList loans={loans.data.items} showBorrower={false} />}
-
+                        )}
+                        */}
                     {can('BORROWER_WRITE') && (
-                        <div style={{ marginTop: 32 }}>
-                            <Button variant={archived ? 'secondary' : 'danger'} busy={busy} disabled={!archived && hasActiveLoans} onClick={toggleArchive}>
-                                {archived ? 'Restore borrower' : 'Archive borrower'}
+                        <div style={{ marginTop: 16 }}>
+                            <Button variant="secondary" onClick={() => setEditing(true)}>
+                                Edit details
                             </Button>
-                            <p className="muted" style={{ marginTop: 8, fontSize: '0.875rem' }}>
-                                {archived
-                                    ? 'Archived borrowers are hidden from the main list and cannot be given new loans. Their history is kept.'
-                                    : hasActiveLoans
-                                        ? 'You can archive this borrower once their active loans are paid off or cancelled.'
-                                        : 'Archiving hides this borrower from the main list. Their loans and payments are kept.'}
-                            </p>
                         </div>
                     )}
-                </>
-            )}
+                </div>
+                {b.note && (
+                    <>
+                        <h2 className="section-title">Note</h2>
+                        <div className="card">
+                            <p>{b.note}</p>
+                        </div>
+                    </>
+                )}
+
+                <h2 className="section-title">Loans</h2>
+                {loans.loading && !loans.data && <Loading rows={2} />}
+                {loans.data && loans.data.items.length === 0 && (
+                    <div className="list">
+                        <Empty title="No loans yet">Create the first loan for this borrower.</Empty>
+                    </div>
+                )}
+                {loans.data && loans.data.items.length > 0 && <LoanList loans={loans.data.items} showBorrower={false} />}
+
+                {can('BORROWER_WRITE') && (
+                    <div style={{ marginTop: 32 }}>
+                        <Button variant={archived ? 'secondary' : 'danger'} busy={busy} disabled={!archived && hasActiveLoans} onClick={toggleArchive}>
+                            {archived ? 'Restore borrower' : 'Archive borrower'}
+                        </Button>
+                        <p className="muted" style={{ marginTop: 8, fontSize: '0.875rem' }}>
+                            {archived
+                                ? 'Archived borrowers are hidden from the main list and cannot be given new loans. Their history is kept.'
+                                : hasActiveLoans
+                                    ? 'You can archive this borrower once their active loans are paid off or cancelled.'
+                                    : 'Archiving hides this borrower from the main list. Their loans and payments are kept.'}
+                        </p>
+                    </div>
+                )}
+            </>}
             {editing && b && (
                 <EditBorrowerSheet
                     borrower={b}
@@ -197,7 +195,7 @@ function EditBorrowerSheet({ borrower, onClose, onSaved }) {
                 <Field label="Email (optional)">
                     <input type="email" value={form.email} onChange={set('email')} maxLength={200} autoComplete="off" />
                 </Field>
-                <Field label="ID number (optional)" hint="Stored as entered. It is not verified.">
+                <Field label="ID number (optional)">
                     <input value={form.nationalId} onChange={set('nationalId')} maxLength={40} autoComplete="off" />
                 </Field>
                 <Field label="Note (optional)">

@@ -32,29 +32,20 @@ export function RuleFields({ value, onChange }) {
     const set = (key) => (e) => onChange({ ...value, [key]: e.target.value })
     return (
         <>
-            <Field
-                label="Interest (% of the amount lent)"
-                hint="Charged once per loan, however long the term. For example, 30% on 1,000 is 300."
-            >
+            <Field label="Interest (% of the amount lent)" hint="Charged once per loan.">
                 <input type="number" min="0.01" max="100" step="any" value={value.ratePercent} onChange={set('ratePercent')} required />
             </Field>
-            <Field label="Grace period (days)" hint="Days after the due date before a loan counts as overdue.">
+            <Field label="Grace period (days)">
                 <input type="number" min="0" max="60" step="1" value={value.graceDays} onChange={set('graceDays')} required />
             </Field>
             <div className="pair">
-                <Field
-                    label="Late penalty (% of the interest)"
-                    hint="Added for each month a loan stays overdue. 100 means the same as the interest. 0 means none."
-                >
+                <Field label="Late penalty (% of the interest)" hint="Added each month overdue.">
                     <input type="number" min="0" max="300" step="any" value={value.penaltyPercent} onChange={set('penaltyPercent')} required />
                 </Field>
-                <Field label="Penalty limit (KES)" hint="Optional. The most penalty one loan can collect.">
+                <Field label="Penalty limit (KES)" hint="Optional.">
                     <input type="number" min="0" step="any" value={value.penaltyCap} onChange={set('penaltyCap')} />
                 </Field>
             </div>
-            <p className="muted" style={{ fontSize: '0.8125rem', marginBottom: 18 }}>
-                Payments are applied to penalty first, then interest, then principal. Late penalties stop being added once the loan is fully paid.
-            </p>
         </>
     )
 }

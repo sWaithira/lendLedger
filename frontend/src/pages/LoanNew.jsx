@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { api, describeError } from '../api.js'
 import { Button, Field, PageHead } from '../components/ui.jsx'
 import { formatDate, formatMoney, percent, todayIso } from '../format.js'
-import { useDebounced, useFetch } from '../hooks.js'
+//import { useDebounced, useFetch } from '../hooks.js'
 
 export default function LoanNew() {
     const navigate = useNavigate()
@@ -93,7 +93,7 @@ export default function LoanNew() {
                     <Field label="Borrower">
                         <BorrowerPicker value={borrower} onChange={setPicked} />
                     </Field>
-                    <Field label="Product" hint={product && productTerms(product)}>
+                    <Field label="Product">
                         <select value={productId} onChange={(e) => setProductChoice(e.target.value)} required>
                             {products.data?.map((p) => (
                                 <option key={p.id} value={p.id}>
@@ -164,15 +164,6 @@ export default function LoanNew() {
     )
 }
 
-function productTerms(product) {
-    const interest = `${percent(product.ratePerPeriod)} interest, charged once`
-    const penalty =
-        product.penaltyRatePerPeriod > 0
-            ? `late penalty of ${percent(product.penaltyRatePerPeriod)} of the interest for each month overdue`
-            : 'no late penalty'
-    const grace = product.graceDays > 0 ? ` · ${product.graceDays} days grace` : ''
-    return `${interest} · ${penalty}${grace}`
-}
 function Charge({ c }) {
     let label
     if (c.type === 'PENALTY') label = `Late penalty, month ${c.period + 1}`
