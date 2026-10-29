@@ -37,3 +37,6 @@ INSERT INTO loan_rule_version
                                                                                                                  'cccccccc-0000-0000-0000-000000000003', 'cccccccc-0000-0000-0000-000000000003', now(),
                                                                                                                  'Demo default (spec 13.3)')
     ON CONFLICT (id) DO NOTHING;
+-- Demo lenders never expire (new lenders get a 30-day trial by default).
+UPDATE tenant SET subscription_expires_on = NULL
+WHERE id::text LIKE '11111111%' OR id::text LIKE '22222222%';
