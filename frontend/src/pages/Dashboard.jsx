@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth.jsx'
 import MonthlyChart from '../components/MonthlyChart.jsx'
-import PerformanceCard from '../components/PerformanceCard.jsx'
 import { Button, Empty, ErrorNote, Loading, PageHead } from '../components/ui.jsx'
 import { formatDate, formatMoney, loanNumber } from '../format.js'
 import { useFetch } from '../hooks.js'
@@ -122,8 +121,6 @@ export default function Dashboard() {
                     {monthly.data && <MonthlyChart points={monthly.data} label={`Six months to ${monthLabel}`} />}
                 </section>
             )}
-
-            {can('REPORT_VIEW') && <PerformanceCard now={now} />}
 
             <h2 className="section-title">Needs attention</h2>
             {overdue.data && overdue.data.items.length === 0 && (

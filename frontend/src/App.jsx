@@ -7,6 +7,7 @@ import Register from './pages/Register.jsx'
 import Settings from './pages/Settings.jsx'
 import ImportData from './pages/ImportData.jsx'
 import Dashboard from './pages/Dashboard.jsx'
+import Performance from './pages/Performance.jsx'
 import Overdue from './pages/Overdue.jsx'
 import Borrowers from './pages/Borrowers.jsx'
 import BorrowerDetail from './pages/BorrowerDetail.jsx'
@@ -24,6 +25,11 @@ function Shell() {
                     <NavLink to="/dashboard">
                         <Icon name="chart" /> Overview
                     </NavLink>
+                    {can('REPORT_VIEW') && (
+                        <NavLink to="/performance">
+                            <Icon name="chart" /> Performance
+                        </NavLink>
+                    )}
                     <NavLink to="/overdue">
                         <Icon name="alert" /> Overdue
                     </NavLink>
@@ -84,6 +90,7 @@ export default function App() {
             <Route element={<RequireAuth />}>
                 <Route index element={<Navigate to="/dashboard" replace />} />
                 <Route path="dashboard" element={<Dashboard />} />
+                <Route path="performance" element={<Performance />} />
                 <Route path="overdue" element={<Overdue />} />
                 <Route path="borrowers" element={<Borrowers />} />
                 <Route path="borrowers/:id" element={<BorrowerDetail />} />

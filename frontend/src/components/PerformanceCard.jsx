@@ -37,9 +37,6 @@ export default function PerformanceCard({ now }) {
 
     return (
         <section className="card" aria-label="Performance">
-            <div className="chart-head">
-                <h2>Performance</h2>
-            </div>
             <div className="perf-presets">
                 <Button variant="secondary" onClick={() => lastMonths(3)}>3 months</Button>
                 <Button variant="secondary" onClick={() => lastMonths(6)}>6 months</Button>
