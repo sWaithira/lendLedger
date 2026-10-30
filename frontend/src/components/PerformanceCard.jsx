@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { formatMoney } from '../format.js'
 import { useFetch } from '../hooks.js'
 import { Button, ErrorNote, Field } from './ui.jsx'
@@ -9,6 +9,8 @@ const label = (v) => {
     const [y, m] = v.split('-').map(Number)
     return monthName.format(new Date(y, m - 1, 1))
 }
+
+const METHOD_LABEL = { CASH: 'Cash', MPESA_MANUAL: 'M-Pesa', BANK: 'Bank transfer', MANUAL: 'Other' }
 
 const OUTCOMES = [
     ['paidOff', 'Paid off', 'po-paid'],
@@ -85,6 +87,19 @@ export default function PerformanceCard({ now }) {
                             <strong className="money">{data.loansIssued}</strong>
                         </div>
                     </div>
+                    <h3 className="section-title" style={{ marginTop: 20 }}>Received by payment method</h3>
+                    {(data.byMethod || []).length > 0 ? (
+                        <dl className="kv">
+                            {data.byMethod.map((m) => (
+                                <Fragment key={m.method}>
+                                    <dt>{METHOD_LABEL[m.method] || m.method}</dt>
+                                    <dd className="money">{formatMoney(m.total)}</dd>
+                                </Fragment>
+                            ))}
+                        </dl>
+                    ) : (
+                        <p className="muted">No payments were received in this period.</p>
+                    )}
                     <h3 className="section-title" style={{ marginTop: 20 }}>What happened to these loans</h3>
                     {total > 0 ? (
                         <>

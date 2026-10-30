@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -60,6 +61,28 @@ class PerformanceRepository {
                 .query((rs, i) -> new Received(rs.getBigDecimal("principal"), rs.getBigDecimal("interest"),
                         rs.getBigDecimal("penalty")))
                 .single();
+    }
+
+    /** Money received per payment method in the period, net of reversals. Rollovers are not money. */
+    List<PerformanceDtos.MethodTotal> receivedByMethod(UUID tenantId, ZoneId zone, LocalDate from, LocalDate to) {
+        return jdbc.sql("""
+                        SELECT r.method, COALESCE(SUM(a.amount), 0) AS total
+                        FROM payment_allocation a
+                        JOIN repayment r ON r.tenant_id = a.tenant_id AND r.id = a.repayment_id
+                        LEFT JOIN repayment_reversal rv ON rv.tenant_id = a.tenant_id AND rv.id = a.reversal_id
+                        CROSS JOIN LATERAL (SELECT CASE WHEN a.reversal_id IS NULL THEN r.payment_date
+                                                        ELSE (rv.reversed_at AT TIME ZONE :zone)::date END AS d) eff
+                        WHERE a.tenant_id = :tenant AND r.method <> 'ROLLOVER' AND eff.d BETWEEN :from AND :to
+                        GROUP BY r.method
+                        HAVING SUM(a.amount) <> 0
+                        ORDER BY SUM(a.amount) DESC
+                        """)
+                .param("zone", zone.getId())
+                .param("tenant", tenantId)
+                .param("from", from)
+                .param("to", to)
+                .query((rs, i) -> new PerformanceDtos.MethodTotal(rs.getString("method"), rs.getBigDecimal("total")))
+                .list();
     }
 
     /** Closed loans issued in the period: paid off, or closed because their principal was rolled into a new loan. */

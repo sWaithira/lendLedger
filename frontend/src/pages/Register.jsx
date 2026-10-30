@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { api, describeError } from '../api.js'
 import { useAuth } from '../auth.jsx'
-import { ProductFields, RuleExample, RuleFields } from '../components/LenderForms.jsx'
+import { ProductFields, RuleFields } from '../components/LenderForms.jsx'
 import PasswordInput from '../components/PasswordInput.jsx'
 import { Button, Field } from '../components/ui.jsx'
 import { emptyRule, productToPayload, ruleToPayload } from '../rules.js'
@@ -13,7 +13,7 @@ const STEPS = ['Your business', 'What you lend', 'Your lending rules']
 export default function Register() {
     const { user } = useAuth()
     const [step, setStep] = useState(0)
-    const [account, setAccount] = useState({ businessName: '', ownerName: '', email: '', password: '', accessCode: '' })
+    const [account, setAccount] = useState({ businessName: '', ownerName: '', email: '', password: '' })
     const [product, setProduct] = useState({ name: 'Monthly Loan', minPrincipal: '1000', maxPrincipal: '100000', maxTermPeriods: '6' })
     const [rule, setRule] = useState(emptyRule)
     const [createdFor, setCreatedFor] = useState(null)
@@ -61,7 +61,6 @@ export default function Register() {
                 ownerName: account.ownerName.trim(),
                 email: account.email.trim(),
                 password: account.password,
-                accessCode: account.accessCode.trim() || undefined,
                 product: { ...productToPayload(product), rule: ruleToPayload(rule) },
             })
             setCreatedFor({ businessName: account.businessName.trim(), email: account.email.trim() })
@@ -130,9 +129,6 @@ export default function Register() {
                                 autoComplete="new-password"
                             />
                         </Field>
-                        <Field label="Access code (if you were given one)">
-                            <input value={account.accessCode} onChange={setField('accessCode')} maxLength={100} autoComplete="off" />
-                        </Field>
                         {nav}
                         <p className="muted" style={{ marginTop: 12, textAlign: 'center' }}>
                             Already registered? <Link to="/login">Sign in</Link>
@@ -148,14 +144,9 @@ export default function Register() {
                 )}
 
                 {step === 2 && (
-                    <div className="split">
-                        <div className="card">
-                            <RuleFields value={rule} onChange={setRule} />
-                            {nav}
-                        </div>
-                        <div>
-                            <RuleExample rule={rule} sticky />
-                        </div>
+                    <div className="card">
+                        <RuleFields value={rule} onChange={setRule} />
+                        {nav}
                     </div>
                 )}
             </form>

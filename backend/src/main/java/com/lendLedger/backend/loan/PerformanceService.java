@@ -78,6 +78,7 @@ class PerformanceService {
 
         return new PerformanceDtos.Performance(from, to, lent.loans(), lent.principal(),
                 got.principal().add(got.interest()).add(got.penalty()), got.interest(),
-                new PerformanceDtos.Outcomes(done.paidOff(), done.rolledOver(), onTrack, overdue));
+                new PerformanceDtos.Outcomes(done.paidOff(), done.rolledOver(), onTrack, overdue),
+                repo.receivedByMethod(tenantId, zone, from, to));
     }
 }

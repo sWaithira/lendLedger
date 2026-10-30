@@ -347,3 +347,7 @@ input[type="checkbox"] { width: 22px; min-height: 22px; padding: 0; flex: none; 
 /* Phone bottom bar: five items. Performance and Settings move under More. */
 @media (max-width: 640px) { .nav .nav-desktop { display: none; } }
 @media (min-width: 641px) { .nav .nav-more { display: none; } }
+
+/* Month and date inputs must not push a two-column row past the screen edge on phones */
+.pair > * { min-width: 0; }
+.pair input { min-width: 0; max-width: 100%; }
