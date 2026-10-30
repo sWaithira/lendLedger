@@ -1,0 +1,6 @@
+target
+.idea
+*.dump
+.env
+.env.*
+application-local.properties
