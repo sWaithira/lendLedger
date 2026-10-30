@@ -42,7 +42,11 @@ export default function Overdue() {
                                     <div className="grow">
                                         <div className="title">{o.borrowerName}</div>
                                         <div className="sub">
-                                            {loanNumber(o.loanNumber)} · <span className="late">{o.daysOverdue} days overdue</span> · due {formatDate(o.dueDate)} ·{' '}
+                                            {loanNumber(o.loanNumber)} ·{' '}
+                                            <span className="late">
+                                                {o.fixedFee ? `Month ${o.penaltyMonth + 1}` : `${o.daysOverdue} days overdue`}
+                                            </span>{' '}
+                                            · due {formatDate(o.dueDate)} ·{' '}
                                             {o.lastPaymentDate ? `last payment ${formatDate(o.lastPaymentDate)}` : 'no payments yet'}
                                         </div>
                                     </div>

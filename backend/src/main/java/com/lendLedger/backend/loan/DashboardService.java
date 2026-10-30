@@ -227,7 +227,8 @@ public class DashboardService {
                         a.row().borrowerName(), phone(contacts, a.row().borrowerId()), email(contacts, a.row().borrowerId()),
                         a.row().principal(), a.row().issueDate(), a.row().dueDate(), a.view().daysOverdue(),
                         ChargeAssessor.completedOverduePeriods(a.row().terms(), today), a.view().outstanding(),
-                        lastPayments.get(a.row().id())))
+                        lastPayments.get(a.row().id()),
+                        a.view().penaltyMonth(), a.view().interestOnce()))
                 .toList();
     }
 

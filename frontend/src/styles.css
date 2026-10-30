@@ -299,3 +299,55 @@ a.card-item:hover { text-decoration: none; filter: brightness(0.98); }
 .history ul { margin: 0; padding-left: 18px; color: var(--text-2); font-size: 0.9375rem; display: grid; gap: 6px; }
 .check { display: flex; align-items: center; gap: 12px; min-height: 44px; margin-bottom: 8px; }
 input[type="checkbox"] { width: 22px; min-height: 22px; padding: 0; flex: none; }
+/* Password field with the eye inside, and the registration step bar */
+.pw { position: relative; }
+.pw input { width: 100%; padding-right: 52px; }
+.pw-toggle {
+    position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+    width: 44px; height: 44px; display: grid; place-items: center;
+    appearance: none; background: transparent; border: 0; padding: 0; min-height: 0; box-shadow: none;
+    color: var(--text-2); cursor: pointer; border-radius: 10px;
+}
+.pw-toggle:focus-visible { outline: 2px solid var(--accent, #0062c4); outline-offset: -2px; }
+.step-bar { display: flex; gap: 6px; margin: 0 0 8px; }
+.step-bar span { flex: 1; height: 4px; border-radius: 2px; background: var(--text-2); opacity: 0.25; }
+.step-bar span.on { background: var(--accent, #0062c4); opacity: 1; }
+.step-label { margin: 0 0 16px; font-size: 0.875rem; font-weight: 600; color: var(--text-2); }
+.step-nav { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.step-nav .btn, .step-nav button { flex: 1 1 140px; }
+
+/* Monthly lent-vs-collected chart */
+.mc-lent { fill: var(--accent, #0062c4); background: var(--accent, #0062c4); }
+.mc-principal { fill: var(--green, #1a7f37); background: var(--green, #1a7f37); }
+.mc-interest { fill: var(--orange, #b35c00); background: var(--orange, #b35c00); }
+.mc-penalty { fill: var(--red, #c4281c); background: var(--red, #c4281c); }
+.mc-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-size: 0.8125rem; color: var(--text-2); }
+.mc-key { display: inline-flex; align-items: center; gap: 6px; }
+.mc-key i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+/* Money received = green (the chart now has just lent and received) */
+.mc-received { fill: var(--green, #1a7f37); background: var(--green, #1a7f37); }
+.mc-grid { stroke: var(--text-2, #636366); stroke-opacity: 0.18; stroke-width: 1; }
+.mc-tick { font-size: 11px; fill: var(--text-2, #636366); }
+.month-nav { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 0 0 16px; }
+.month-nav strong { min-width: 9.5rem; text-align: center; }
+
+/* Performance card */
+.perf-presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.po-bar { display: flex; gap: 2px; height: 14px; border-radius: 7px; overflow: hidden; margin: 12px 0 10px; }
+.po-seg { min-width: 6px; }
+.po-paid { background: var(--green, #1a7f37); }
+.po-rolled { background: var(--accent, #0062c4); }
+.po-track { background: var(--text-2, #636366); }
+.po-overdue { background: var(--red, #c4281c); }
+.po-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; list-style: none; padding: 0; margin: 0; font-size: 0.875rem; }
+.po-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.po-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+/* Phone bottom bar: five items. Performance and Settings move under More. */
+@media (max-width: 640px) { .nav .nav-desktop { display: none; } }
+@media (min-width: 641px) { .nav .nav-more { display: none; } }
+
+/* Month and date inputs must not push a two-column row past the screen edge on phones */
+.pair > * { min-width: 0; }
+.pair input { min-width: 0; max-width: 100%; }

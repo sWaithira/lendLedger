@@ -1,8 +1,9 @@
 import { formatMoney, percent } from './format.js'
 
 // Lending rules as the person types them (percentages, text fields) and as the server stores them (fractions).
+// Interest is charged once per loan. The late penalty is a percentage of that interest, added for each month overdue.
 
-export const emptyRule = { ratePercent: '20', graceDays: '0', penaltyPercent: '0', penaltyCap: '' }
+export const emptyRule = { ratePercent: '30', graceDays: '0', penaltyPercent: '100', penaltyCap: '' }
 export const emptyProduct = { name: '', minPrincipal: '1000', maxPrincipal: '100000', maxTermPeriods: '6' }
 
 export function ruleToPayload(rule) {
@@ -35,5 +36,5 @@ export function ruleToForm(rule) {
 
 export const penaltyText = (rule) =>
     rule.penaltyRatePerPeriod > 0
-        ? `${percent(rule.penaltyRatePerPeriod)} per month overdue${rule.penaltyCap != null ? `, up to ${formatMoney(rule.penaltyCap)}` : ''}`
+        ? `${percent(rule.penaltyRatePerPeriod)} of the interest for each month overdue${rule.penaltyCap != null ? `, up to ${formatMoney(rule.penaltyCap)}` : ''}`
         : 'None'

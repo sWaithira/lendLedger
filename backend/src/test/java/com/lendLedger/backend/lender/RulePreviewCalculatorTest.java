@@ -9,65 +9,52 @@ import org.junit.jupiter.api.Test;
 
 class RulePreviewCalculatorTest {
 
-    private static BigDecimal d(String v) { return new BigDecimal(v); }
-
-    @Test
-    void flatInterestWithNoPenalty() {
-        List<RulePreviewCalculator.Scenario> s =
-                RulePreviewCalculator.scenarios(d("10000"), 1, d("0.30"), 0, d("0"), null);
-
-        assertThat(s.get(0).total()).isEqualByComparingTo("13000.00");   // on time
-        assertThat(s.get(1).total()).isEqualByComparingTo("16000.00");   // one more month of interest
-        assertThat(s.get(2).total()).isEqualByComparingTo("22000.00");   // three more
-        assertThat(s.get(2).penalty()).isEqualByComparingTo("0.00");
+    private static void assertTotal(RulePreviewCalculator.Scenario s, String expected) {
+        assertThat(s.total()).isEqualByComparingTo(new BigDecimal(expected));
     }
 
     @Test
-    void latePenaltyIsAddedPerMonthOverdue() {
-        List<RulePreviewCalculator.Scenario> s =
-                RulePreviewCalculator.scenarios(d("10000"), 1, d("0.30"), 0, d("0.05"), null);
-
-        assertThat(s.get(0).penalty()).isEqualByComparingTo("0.00");
-        assertThat(s.get(1).penalty()).isEqualByComparingTo("500.00");
-        assertThat(s.get(1).total()).isEqualByComparingTo("16500.00");
-        assertThat(s.get(2).penalty()).isEqualByComparingTo("1500.00");
-        assertThat(s.get(2).total()).isEqualByComparingTo("23500.00");
+    void clientTable_3223_at_30_percent() {
+        List<RulePreviewCalculator.Scenario> s = RulePreviewCalculator.scenarios(
+                new BigDecimal("3223.00"), 1, new BigDecimal("0.30"), 0, BigDecimal.ONE, null);
+        assertThat(s).hasSize(3);
+        assertThat(s.get(0).label()).isEqualTo("Month 1 (paid on time)");
+        assertTotal(s.get(0), "4190");
+        assertThat(s.get(0).penalty()).isEqualByComparingTo("0");
+        assertTotal(s.get(1), "5157");
+        assertTotal(s.get(2), "6124");
     }
 
     @Test
-    void penaltyStopsAtTheCap() {
-        List<RulePreviewCalculator.Scenario> s =
-                RulePreviewCalculator.scenarios(d("10000"), 1, d("0.30"), 0, d("0.05"), d("1000"));
-
-        assertThat(s.get(2).penalty()).isEqualByComparingTo("1000.00");
+    void lender_20000_at_30_percent() {
+        List<RulePreviewCalculator.Scenario> s = RulePreviewCalculator.scenarios(
+                new BigDecimal("20000.00"), 1, new BigDecimal("0.30"), 0, BigDecimal.ONE, null);
+        assertTotal(s.get(0), "26000");
+        assertTotal(s.get(1), "32000");
+        assertTotal(s.get(2), "38000");
     }
 
     @Test
-    void graceDaysDoNotChangeTheExample() {
-        List<RulePreviewCalculator.Scenario> withGrace =
-                RulePreviewCalculator.scenarios(d("10000"), 1, d("0.30"), 5, d("0.05"), null);
-        List<RulePreviewCalculator.Scenario> without =
-                RulePreviewCalculator.scenarios(d("10000"), 1, d("0.30"), 0, d("0.05"), null);
-
-        assertThat(withGrace.get(2).total()).isEqualByComparingTo(without.get(2).total());
+    void graceDaysDoNotChangeTheAmounts() {
+        List<RulePreviewCalculator.Scenario> s = RulePreviewCalculator.scenarios(
+                new BigDecimal("1000.00"), 1, new BigDecimal("0.30"), 3, BigDecimal.ONE, null);
+        assertTotal(s.get(0), "1300");
+        assertTotal(s.get(1), "1600");
+        assertTotal(s.get(2), "1900");
     }
 
     @Test
-    void longerTermsChargeInterestForEveryMonth() {
-        List<RulePreviewCalculator.Scenario> s =
-                RulePreviewCalculator.scenarios(d("6000"), 3, d("0.10"), 0, d("0"), null);
-
-        assertThat(s.get(0).interest()).isEqualByComparingTo("1800.00");   // 3 months x 600
-        assertThat(s.get(0).total()).isEqualByComparingTo("7800.00");
+    void zeroPenaltyMeansNoExtraCharge() {
+        List<RulePreviewCalculator.Scenario> s = RulePreviewCalculator.scenarios(
+                new BigDecimal("1000.00"), 1, new BigDecimal("0.30"), 0, BigDecimal.ZERO, null);
+        assertTotal(s.get(2), "1300");
     }
 
     @Test
-    void theLabelsAreInOrder() {
-        List<RulePreviewCalculator.Scenario> s =
-                RulePreviewCalculator.scenarios(d("1000"), 1, d("0.10"), 0, d("0"), null);
-
-        assertThat(s.get(0).label()).isEqualTo("Paid on time");
-        assertThat(s.get(1).label()).isEqualTo("1 month late");
-        assertThat(s.get(2).label()).isEqualTo("3 months late");
+    void penaltyCapLimitsTheTotalPenalty() {
+        List<RulePreviewCalculator.Scenario> s = RulePreviewCalculator.scenarios(
+                new BigDecimal("1000.00"), 1, new BigDecimal("0.30"), 0, BigDecimal.ONE, new BigDecimal("350"));
+        assertTotal(s.get(1), "1600");
+        assertTotal(s.get(2), "1650");   // second penalty capped: 300 + 50
     }
 }

@@ -8,5 +8,7 @@ public enum Permission {
     REPORT_VIEW,
     AUDIT_VIEW,
     USER_MANAGE,
-    SETTINGS_MANAGE
+    SETTINGS_MANAGE,
+    /** Operating the platform: lender metadata and subscriptions. Held only by PLATFORM_ADMIN, never by a lender. */
+    PLATFORM_MANAGE
 }

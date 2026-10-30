@@ -54,7 +54,7 @@ class DashboardRepository {
         return jdbc.sql("""
                         SELECT count(*) AS n, COALESCE(SUM(principal), 0) AS total
                         FROM loan
-                        WHERE tenant_id = :tenant AND issue_date BETWEEN :from AND :to AND status <> 'CANCELLED'
+                        WHERE tenant_id = :tenant AND issue_date BETWEEN :from AND :to AND status <> 'CANCELLED' AND rolled_from_loan_id IS NULL
                         """)
                 .param("tenant", tenantId)
                 .param("from", from)
@@ -76,7 +76,7 @@ class DashboardRepository {
                         LEFT JOIN repayment_reversal rv ON rv.tenant_id = a.tenant_id AND rv.id = a.reversal_id
                         CROSS JOIN LATERAL (SELECT CASE WHEN a.reversal_id IS NULL THEN r.payment_date
                                                         ELSE (rv.reversed_at AT TIME ZONE :zone)::date END AS d) eff
-                        WHERE a.tenant_id = :tenant AND eff.d BETWEEN :from AND :to
+                        WHERE a.tenant_id = :tenant AND r.method <> 'ROLLOVER' AND eff.d BETWEEN :from AND :to
                         GROUP BY 1
                         ORDER BY 1
                         """)
@@ -135,7 +135,7 @@ class DashboardRepository {
                         JOIN borrower b ON b.tenant_id = l.tenant_id AND b.id = l.borrower_id
                         LEFT JOIN repayment_reversal rv ON rv.tenant_id = r.tenant_id AND rv.repayment_id = r.id
                         LEFT JOIN payment_allocation a ON a.tenant_id = r.tenant_id AND a.repayment_id = r.id
-                        WHERE r.tenant_id = :tenant AND r.payment_date BETWEEN :from AND :to
+                        WHERE r.tenant_id = :tenant AND r.payment_date BETWEEN :from AND :to AND r.method <> 'ROLLOVER'
                         GROUP BY r.id, l.id, b.id, rv.id
                         ORDER BY r.payment_date, r.recorded_at
                         """)

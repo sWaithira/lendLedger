@@ -3,12 +3,13 @@ import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../auth.jsx'
 import PaymentSheet from '../components/PaymentSheet.jsx'
 import ReverseSheet from '../components/ReverseSheet.jsx'
+import RolloverSheet from '../components/RolloverSheet.jsx'
 import { Badge, Button, Empty, ErrorNote, Loading, PageHead, StatusBadge } from '../components/ui.jsx'
 import { formatDate, formatMoney, loanNumber, percent } from '../format.js'
 import { useFetch } from '../hooks.js'
 
 const COMPONENT_LABEL = { PENALTY: 'Penalty', INTEREST: 'Interest', PRINCIPAL: 'Principal' }
-const METHOD_LABEL = { CASH: 'Cash', MPESA_MANUAL: 'M-Pesa', BANK: 'Bank transfer', MANUAL: 'Other' }
+const METHOD_LABEL = { CASH: 'Cash', MPESA_MANUAL: 'M-Pesa', BANK: 'Bank transfer', MANUAL: 'Other', ROLLOVER: 'Rolled over' }
 
 export default function LoanDetail() {
     const { id } = useParams()
@@ -18,6 +19,8 @@ export default function LoanDetail() {
     const statement = useFetch(`/api/v1/loans/${id}/statement`)
     const [paying, setPaying] = useState(false)
     const [reversing, setReversing] = useState(null)
+    const [rolling, setRolling] = useState(false)
+    const links = useFetch(`/api/v1/loans/${id}/rollover-links`)
     const [notice, setNotice] = useState('')
 
     function done(message) {
@@ -33,6 +36,8 @@ export default function LoanDetail() {
     const items = payments.data || []
     // Only the latest payment that still stands can be reversed (the server enforces this too).
     const reversibleId = [...items].reverse().find((p) => !p.reversed)?.id
+    // Rolling over needs at least one standing cash payment (the server checks the interest is fully paid).
+    const lastStanding = [...items].reverse().find((p) => !p.reversed && p.method !== 'ROLLOVER')
 
     return (
         <>
@@ -41,6 +46,16 @@ export default function LoanDetail() {
             </Link>
             <ErrorNote error={loan.error} onRetry={loan.reload} />
             {loan.loading && !l && <Loading rows={3} />}
+            {links.data?.rolledFrom && (
+                <div className="notice info" role="status">
+                    Rolled over from <Link to={`/loans/${links.data.rolledFrom.id}`}>{loanNumber(links.data.rolledFrom.loanNumber)}</Link>
+                </div>
+            )}
+            {links.data?.rolledInto && (
+                <div className="notice info" role="status">
+                    The principal was rolled over into <Link to={`/loans/${links.data.rolledInto.id}`}>{loanNumber(links.data.rolledInto.loanNumber)}</Link>
+                </div>
+            )}
             {notice && (
                 <div className="notice info" role="status">
                     {notice}
@@ -56,6 +71,11 @@ export default function LoanDetail() {
                             <span className="head-actions">
                 <StatusBadge status={l.displayStatus} />
                                 {can('REPAYMENT_POST') && l.status === 'ACTIVE' && <Button onClick={() => setPaying(true)}>Record payment</Button>}
+                                {can('LOAN_CREATE') && l.status === 'ACTIVE' && l.outstanding.principal > 0 && lastStanding && (
+                                    <Button variant="secondary" onClick={() => setRolling(true)}>
+                                        Roll over principal
+                                    </Button>
+                                )}
               </span>
                         }
                     />
@@ -85,16 +105,22 @@ export default function LoanDetail() {
                         <dl className="kv">
                             <dt>Due date</dt>
                             <dd>{formatDate(l.dueDate)}</dd>
+                            <dt>Amount due by {formatDate(l.dueDate)}</dt>
+                            <dd className="money">{formatMoney(l.amountDueByDueDate)}</dd>
                             <dt>Term</dt>
                             <dd>
                                 {l.termPeriods} month{l.termPeriods === 1 ? '' : 's'}
                             </dd>
                             <dt>Interest</dt>
-                            <dd>{percent(l.ratePerPeriod)} per month</dd>
+                            <dd>{percent(l.ratePerPeriod)}{l.interestOnce ? ', charged once' : ' per month'}</dd>
                             {l.daysOverdue > 0 && (
                                 <>
                                     <dt>Overdue</dt>
-                                    <dd>{l.daysOverdue} days</dd>
+                                    <dd>
+                                        {l.penaltyMonth > 0
+                                            ? `Month ${l.penaltyMonth + 1} · due ${formatDate(l.dueDate)}`
+                                            : `${l.daysOverdue} days`}
+                                    </dd>
                                 </>
                             )}
                         </dl>
@@ -125,7 +151,7 @@ export default function LoanDetail() {
                                         </div>
                                         {p.reversed && <div className="sub">Reversed: {p.reversalReason}</div>}
                                     </div>
-                                    {can('REPAYMENT_REVERSE') && p.id === reversibleId && (
+                                    {can('REPAYMENT_REVERSE') && p.id === reversibleId && p.method !== 'ROLLOVER' && (
                                         <Button variant="danger" onClick={() => setReversing(p)}>
                                             Reverse
                                         </Button>
@@ -171,6 +197,7 @@ export default function LoanDetail() {
 
             {paying && <PaymentSheet loan={l} onClose={() => setPaying(false)} onDone={done} />}
             {reversing && <ReverseSheet payment={reversing} onClose={() => setReversing(null)} onDone={done} />}
+            {rolling && <RolloverSheet loan={l} defaultDate={lastStanding?.paymentDate} onClose={() => setRolling(false)} />}
         </>
     )
 }

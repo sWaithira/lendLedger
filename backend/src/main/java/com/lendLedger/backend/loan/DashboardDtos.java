@@ -24,7 +24,8 @@ public final class DashboardDtos {
     public record OverdueItem(UUID loanId, int loanNumber, UUID borrowerId, String borrowerName,
                               String borrowerPhone, String borrowerEmail, BigDecimal principal, LocalDate issueDate,
                               LocalDate dueDate, long daysOverdue, int overduePeriods,
-                              LoanDtos.BalanceView outstanding, LocalDate lastPaymentDate) { }
+                              LoanDtos.BalanceView outstanding, LocalDate lastPaymentDate,
+                              int penaltyMonth, boolean fixedFee) { }
 
     public record CsvFile(String filename, String content) { }
 }

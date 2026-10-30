@@ -51,7 +51,8 @@ public final class LoanDtos {
                            String productName, BigDecimal principal, String currency, LocalDate issueDate,
                            int termPeriods, LocalDate dueDate, BigDecimal ratePerPeriod, int ruleVersionNumber,
                            String status, String displayStatus, long daysOverdue,
-                           LocalDate asOf, BalanceView outstanding) { }
+                           LocalDate asOf, BalanceView outstanding,
+                           int penaltyMonth, BigDecimal amountDueByDueDate, boolean interestOnce) { }
 
     public record ProductView(UUID id, String name, String currency, BigDecimal minPrincipal,
                               BigDecimal maxPrincipal, UUID ruleVersionId, int ruleVersionNumber,

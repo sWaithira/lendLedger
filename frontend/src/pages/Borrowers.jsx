@@ -29,7 +29,18 @@ export default function Borrowers() {
             <PageHead
                 title="Borrowers"
                 subtitle="The people you lend to."
-                actions={can('BORROWER_WRITE') && <Button onClick={() => setCreating(true)}>New borrower</Button>}
+                actions={
+                    can('BORROWER_WRITE') && (
+                        <span className="head-actions">
+                            {can('LOAN_CREATE') && (
+                                <Link className="btn secondary" to="/import">
+                                    Import from Excel
+                                </Link>
+                            )}
+                            <Button onClick={() => setCreating(true)}>New borrower</Button>
+                        </span>
+                    )
+                }
             />
 
             <div className="toolbar">

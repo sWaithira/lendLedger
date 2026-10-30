@@ -142,6 +142,10 @@ public class RepaymentService {
         if (current.reversedAt() != null) {
             throw new ApiException(HttpStatus.CONFLICT, "already_reversed", "This payment has already been reversed");
         }
+        if ("ROLLOVER".equals(current.method())) {
+            throw new ApiException(HttpStatus.CONFLICT, "rollover_not_reversible",
+                    "A rollover cannot be reversed because a new loan was created from it");
+        }
         UUID latest = repayments.latestActiveRepaymentId(tenantId, loan.id()).orElse(null);
         if (!repaymentId.equals(latest)) {
             throw new ApiException(HttpStatus.CONFLICT, "only_latest_reversible",

@@ -17,6 +17,8 @@ import com.lendLedger.backend.common.TenantClock;
 import com.lendLedger.backend.finance.AssessedCharge;
 import com.lendLedger.backend.finance.BalanceComponent;
 import com.lendLedger.backend.finance.ChargeAssessor;
+import com.lendLedger.backend.finance.InterestModel;
+import com.lendLedger.backend.finance.PeriodUnit;
 import com.lendLedger.backend.finance.LedgerBalance;
 import com.lendLedger.backend.finance.LoanTerms;
 import com.lendLedger.backend.finance.Outstanding;
@@ -33,7 +35,7 @@ public class LoanService {
     private static final int MAX_PAGE_SIZE = 100;
     private static final int DUE_SOON_DAYS = 7;
 
-    private record Quote(LoanRepository.RuleInfo rule, LoanTerms terms) { }
+    record Quote(LoanRepository.RuleInfo rule, LoanTerms terms) { }
 
     private final LoanRepository loans;
     private final AuditService audit;
@@ -131,7 +133,7 @@ public class LoanService {
 
     // ------------------------------------------------------------------ helpers
 
-    private Quote quote(UUID productId, BigDecimal principal, LocalDate issueDate, int termPeriods) {
+    Quote quote(UUID productId, BigDecimal principal, LocalDate issueDate, int termPeriods) {
         UUID tenantId = CurrentUser.tenantId();
         if (issueDate.isAfter(clock.today())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "issue_date_in_future", "The issue date cannot be in the future");
@@ -139,7 +141,7 @@ public class LoanService {
         LoanRepository.RuleInfo rule = loans.findEffectiveRule(tenantId, productId, issueDate)
                 .orElseThrow(() -> new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "no_effective_rule_version",
                         "No approved rules apply to this product on that date"));
-        if (!"FLAT".equals(rule.interestMethod())) {
+        if (!"FLAT".equals(rule.interestMethod()) && !"FIXED_FEE".equals(rule.interestMethod())) {
             throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "unsupported_interest_method",
                     "Interest method " + rule.interestMethod() + " is not supported yet");
         }
@@ -150,12 +152,15 @@ public class LoanService {
         }
         if (termPeriods > rule.maxTermPeriods()) {
             throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "term_too_long",
-                    "This product allows loans of up to " + rule.maxTermPeriods() + " month"
-                            + (rule.maxTermPeriods() == 1 ? "" : "s"));
+                    "This product allows loans of up to " + rule.maxTermPeriods() + " "
+                            + rule.periodUnit().toLowerCase() + (rule.maxTermPeriods() == 1 ? "" : "s"));
         }
         try {
+            InterestModel model = "FIXED_FEE".equals(rule.interestMethod())
+                    ? InterestModel.FIXED_FEE : InterestModel.LEGACY_FLAT;
             LoanTerms terms = new LoanTerms(principal, issueDate, termPeriods, rule.ratePerPeriod(), rule.graceDays(),
-                    rule.penaltyRatePerPeriod(), rule.penaltyCap(), rule.allocationOrder(), rule.roundingMode());
+                    rule.penaltyRatePerPeriod(), rule.penaltyCap(), rule.allocationOrder(), rule.roundingMode(),
+                    PeriodUnit.valueOf(rule.periodUnit()), model);
             return new Quote(rule, terms);
         } catch (IllegalArgumentException e) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "invalid_terms", e.getMessage());
@@ -178,17 +183,21 @@ public class LoanService {
         else if (!today.isBefore(row.dueDate().minusDays(DUE_SOON_DAYS))) display = "DUE_SOON";
         else display = "CURRENT";
 
+        int penaltyMonth = overdue ? ChargeAssessor.completedOverduePeriods(terms, today) : 0;
+        BigDecimal dueDateAmount = terms.principal().add(sum(ChargeAssessor.assess(terms, row.issueDate())));
         return new LoanDtos.LoanView(row.id(), row.loanNumber(), row.borrowerId(), row.borrowerName(), row.productId(),
                 row.productName(), row.principal(), row.currency(), row.issueDate(), row.termPeriods(),
                 row.dueDate(), row.ratePerPeriod(), row.ruleVersionNumber(), row.status(), display, daysOverdue,
-                asOf, new LoanDtos.BalanceView(owed.principal(), owed.interest(), owed.penalty(), owed.total()));
+                asOf, new LoanDtos.BalanceView(owed.principal(), owed.interest(), owed.penalty(), owed.total()),
+                penaltyMonth, dueDateAmount, "FIXED_FEE".equals(row.interestMethod()));
     }
 
-    private static Map<String, String> snapshot(LoanRepository.RuleInfo rule, LoanTerms terms) {
+    static Map<String, String> snapshot(LoanRepository.RuleInfo rule, LoanTerms terms) {
         Map<String, String> s = new LinkedHashMap<>();
         s.put("ruleVersionId", rule.ruleVersionId().toString());
         s.put("ruleVersionNumber", String.valueOf(rule.versionNumber()));
         s.put("interestMethod", rule.interestMethod());
+        s.put("periodUnit", terms.periodUnit().name());
         s.put("principal", terms.principal().toPlainString());
         s.put("issueDate", terms.issueDate().toString());
         s.put("termPeriods", String.valueOf(terms.termPeriods()));

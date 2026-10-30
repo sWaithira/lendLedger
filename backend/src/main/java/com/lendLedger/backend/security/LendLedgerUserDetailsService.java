@@ -30,6 +30,7 @@ public class LendLedgerUserDetailsService implements UserDetailsService {
                         FROM app_user u
                         JOIN tenant t ON t.id = u.tenant_id
                         WHERE lower(u.email) = :email AND t.status = 'ACTIVE'
+                          AND (t.subscription_expires_on IS NULL OR t.subscription_expires_on >= current_date)
                         """)
                 .param("email", normalized)
                 .query((rs, rowNum) -> new LendLedgerPrincipal(

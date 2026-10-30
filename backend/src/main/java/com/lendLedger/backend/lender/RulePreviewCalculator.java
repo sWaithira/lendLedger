@@ -9,13 +9,15 @@ import java.util.Map;
 
 import com.lendLedger.backend.finance.AssessedCharge;
 import com.lendLedger.backend.finance.ChargeAssessor;
+import com.lendLedger.backend.finance.InterestModel;
 import com.lendLedger.backend.finance.LedgerBalance;
 import com.lendLedger.backend.finance.LoanTerms;
 import com.lendLedger.backend.finance.Outstanding;
+import com.lendLedger.backend.finance.PeriodUnit;
 
 /**
  * Shows a lender what their rules mean in money, using the SAME engine that prices real loans, so the example
- * can never disagree with an actual loan. Nothing is saved.
+ * can never disagree with an actual loan. Nothing is saved. Uses the fixed-fee model that new rules get.
  */
 public final class RulePreviewCalculator {
 
@@ -28,11 +30,12 @@ public final class RulePreviewCalculator {
     public static List<Scenario> scenarios(BigDecimal principal, int termMonths, BigDecimal ratePerPeriod,
                                            int graceDays, BigDecimal penaltyPerPeriod, BigDecimal penaltyCap) {
         LoanTerms terms = new LoanTerms(principal, EXAMPLE_ISSUE_DATE, termMonths, ratePerPeriod, graceDays,
-                penaltyPerPeriod, penaltyCap, LoanTerms.DEFAULT_ORDER, RoundingMode.HALF_UP);
+                penaltyPerPeriod, penaltyCap, LoanTerms.DEFAULT_ORDER, RoundingMode.HALF_UP,
+                PeriodUnit.MONTH, InterestModel.FIXED_FEE);
         List<Scenario> result = new ArrayList<>();
-        result.add(scenario("Paid on time", terms, terms.dueDate()));
-        result.add(scenario("1 month late", terms, terms.overdueStart().plusMonths(1)));
-        result.add(scenario("3 months late", terms, terms.overdueStart().plusMonths(3)));
+        result.add(scenario("Month 1 (paid on time)", terms, terms.dueDate()));
+        result.add(scenario("Month 2 (1 month overdue)", terms, ChargeAssessor.penaltyDate(terms, 1)));
+        result.add(scenario("Month 3 (2 months overdue)", terms, ChargeAssessor.penaltyDate(terms, 2)));
         return result;
     }
 

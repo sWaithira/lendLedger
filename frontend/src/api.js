@@ -22,7 +22,7 @@ function xsrfToken() {
     return match ? decodeURIComponent(match[1]) : ''
 }
 
-async function request(method, path, { json, form, headers: extra } = {}) {
+async function request(method, path, { json, form, formData, headers: extra } = {}) {
     const headers = { Accept: 'application/json', ...extra }
     let body
 
@@ -38,6 +38,10 @@ async function request(method, path, { json, form, headers: extra } = {}) {
     if (form) {
         headers['Content-Type'] = 'application/x-www-form-urlencoded'
         body = new URLSearchParams(form).toString()
+    }
+
+    if (formData) {
+        body = formData   // the browser adds the multipart boundary itself
     }
 
     let res
@@ -66,6 +70,7 @@ async function request(method, path, { json, form, headers: extra } = {}) {
 export const api = {
     get: (path) => request('GET', path),
     post: (path, json, headers) => request('POST', path, { json, headers }),
+    upload: (path, formData) => request('POST', path, { formData }),
     put: (path, json) => request('PUT', path, { json }),
     login: (email, password) => request('POST', '/api/v1/auth/login', { form: { email, password } }),
     logout: () => request('POST', '/api/v1/auth/logout'),
