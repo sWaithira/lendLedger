@@ -38,12 +38,9 @@ export function RuleFields({ value, onChange }) {
             <Field label="Grace period (days)">
                 <input type="number" min="0" max="60" step="1" value={value.graceDays} onChange={set('graceDays')} required />
             </Field>
-            <div className="pair">
+            <div>
                 <Field label="Late penalty (% of the interest)" hint="Added each month overdue.">
                     <input type="number" min="0" max="300" step="any" value={value.penaltyPercent} onChange={set('penaltyPercent')} required />
-                </Field>
-                <Field label="Penalty limit (KES)" hint="Optional.">
-                    <input type="number" min="0" step="any" value={value.penaltyCap} onChange={set('penaltyCap')} />
                 </Field>
             </div>
         </>
