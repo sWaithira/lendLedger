@@ -1,6 +1,7 @@
 package com.lendLedger.backend.loan;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,7 +24,9 @@ class PerformanceController {
     @PreAuthorize("hasAuthority('REPORT_VIEW')")
     PerformanceDtos.Performance performance(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-        return service.performance(from, to);
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) UUID productId,
+            @RequestParam(required = false) String method) {
+        return service.performance(from, to, productId, method);
     }
 }
