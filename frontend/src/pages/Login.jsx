@@ -4,6 +4,7 @@ import { describeError } from '../api.js'
 import { useAuth } from '../auth.jsx'
 import { Button, Field } from '../components/ui.jsx'
 import PasswordInput from '../components/PasswordInput.jsx'
+import { DEMO_EMAIL, DEMO_WHATSAPP } from '../contact.js'
 
 export default function Login() {
     const { user, login } = useAuth()
@@ -62,9 +63,18 @@ export default function Login() {
                 <Button type="submit" busy={busy}>
                     Sign in
                 </Button>
-                <p className="muted" style={{ marginTop: 16, textAlign: 'center' }}>
-                    Need an account? Ask your LendLedger administrator.
-                </p>
+                {(DEMO_WHATSAPP || DEMO_EMAIL) && (
+                    <p className="muted" style={{ marginTop: 16, textAlign: 'center' }}>
+                        New lender?{' '}
+                        {DEMO_WHATSAPP && (
+                            <a href={`https://wa.me/${DEMO_WHATSAPP}?text=${encodeURIComponent('Hello, I would like a LendLedger demo.')}`} target="_blank" rel="noreferrer">
+                                Book a demo
+                            </a>
+                        )}
+                        {DEMO_WHATSAPP && DEMO_EMAIL && ' · '}
+                        {DEMO_EMAIL && <a href={`mailto:${DEMO_EMAIL}?subject=${encodeURIComponent('LendLedger demo request')}`}>Email us</a>}
+                    </p>
+                )}
             </form>
         </div>
     )
