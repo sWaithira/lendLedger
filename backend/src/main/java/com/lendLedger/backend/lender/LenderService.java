@@ -78,6 +78,27 @@ public class LenderService {
                 Map.of("business", request.businessName().trim()));
     }
 
+    /** Operator-created lender: tenant, owner and a starter product, all or nothing. The operator chooses the temporary password. */
+    @Transactional
+    public UUID createForOperator(String businessName, String ownerName, String email, String password) {
+        String cleanEmail = email.trim();
+        if (password.equalsIgnoreCase(cleanEmail)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "weak_password", "The password cannot be the same as the email.");
+        }
+        UUID tenantId = UUID.randomUUID();
+        UUID ownerId = UUID.randomUUID();
+        try {
+            repo.insertTenant(tenantId, businessName.trim());
+            repo.insertOwner(ownerId, tenantId, ownerName.trim(), cleanEmail, encoder.encode(password));
+        } catch (DuplicateKeyException e) {
+            throw new ApiException(HttpStatus.CONFLICT, "email_taken", "An account with this email already exists.");
+        }
+        createProduct(tenantId, ownerId, new LenderDtos.ProductInput("Standard loan", new BigDecimal("1000"),
+                new BigDecimal("100000"), 6, new LenderDtos.RuleInput(new BigDecimal("30"), 0, new BigDecimal("100"), null)),
+                "Starter rules created by the operator");
+        return tenantId;
+    }
+
     /** What the rules mean in money, from the same engine that prices real loans. Saves nothing. */
     public LenderDtos.PreviewResponse preview(LenderDtos.PreviewRequest request) {
         try {

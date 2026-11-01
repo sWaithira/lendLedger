@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -19,6 +20,19 @@ public final class PlatformDtos {
     public record ReasonRequest(@Size(max = 300, message = "Reason is too long") String reason) { }
 
     public record SubscriptionRequest(@NotBlank(message = "Choose a plan") String plan, LocalDate expiresOn) { }
+
+    public record CreateLenderRequest(
+            @NotBlank(message = "Business name is required")
+            @Size(min = 2, max = 120, message = "Business name must be 2 to 120 characters") String businessName,
+            @NotBlank(message = "Owner name is required")
+            @Size(min = 2, max = 120, message = "Owner name must be 2 to 120 characters") String ownerName,
+            @NotBlank(message = "Email is required")
+            @Email(message = "Enter a valid email address")
+            @Size(max = 200, message = "Email is too long") String email,
+            @NotBlank(message = "Enter a temporary password")
+            @Size(min = 10, max = 100, message = "Password must be 10 to 100 characters") String password,
+            @NotBlank(message = "Choose a plan") String plan,
+            LocalDate expiresOn) { }
 
     public record PasswordRequest(
             @NotBlank(message = "Enter a password")
