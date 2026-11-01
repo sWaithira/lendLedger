@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { api, describeError } from '../api.js'
 import { Button, Field, PageHead } from '../components/ui.jsx'
-import { formatDate, formatMoney, percent, todayIso } from '../format.js'
-//import { useDebounced, useFetch } from '../hooks.js'
+import { formatDate, formatMoney, todayIso } from '../format.js'
+import { useDebounced, useFetch } from '../hooks.js'
 
 export default function LoanNew() {
     const navigate = useNavigate()

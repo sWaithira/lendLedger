@@ -65,11 +65,6 @@ export default function Login() {
                 <p className="muted" style={{ marginTop: 16, textAlign: 'center' }}>
                     New lender? <Link to="/register">Create an account</Link>
                 </p>
-                {import.meta.env.DEV && (
-                    <p className="muted" style={{ marginTop: 20, fontSize: '0.875rem' }}>
-                        Demo (development only): owner@demo.lendledger.test or officer@demo.lendledger.test, password Demo#2026pass
-                    </p>
-                )}
             </form>
         </div>
     )

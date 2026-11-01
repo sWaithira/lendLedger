@@ -11,7 +11,7 @@ export function ruleToPayload(rule) {
         ratePercent: Number(rule.ratePercent),
         graceDays: Number(rule.graceDays),
         penaltyPercent: Number(rule.penaltyPercent),
-        penaltyCap: rule.penaltyCap === '' ? null : Number(rule.penaltyCap),
+        penaltyCap: null,
     }
 }
 
