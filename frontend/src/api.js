@@ -72,6 +72,7 @@ export const api = {
     post: (path, json, headers) => request('POST', path, { json, headers }),
     upload: (path, formData) => request('POST', path, { formData }),
     put: (path, json) => request('PUT', path, { json }),
+    delete: (path) => request('DELETE', path),
     login: (email, password) => request('POST', '/api/v1/auth/login', { form: { email, password } }),
     logout: () => request('POST', '/api/v1/auth/logout'),
 }
