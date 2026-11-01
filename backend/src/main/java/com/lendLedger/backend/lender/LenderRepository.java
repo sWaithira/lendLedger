@@ -57,6 +57,14 @@ class LenderRepository {
                 .update();
     }
 
+    /** The operator set this password, so the owner must choose their own at the first sign-in. */
+    void requirePasswordChange(UUID tenantId, UUID userId) {
+        jdbc.sql("UPDATE app_user SET must_change_password = TRUE WHERE tenant_id = :tenant AND id = :id")
+                .param("tenant", tenantId)
+                .param("id", userId)
+                .update();
+    }
+
     void insertProduct(UUID id, UUID tenantId, String name, BigDecimal minPrincipal, BigDecimal maxPrincipal, int maxTermPeriods) {
         jdbc.sql("""
                         INSERT INTO loan_product (id, tenant_id, name, min_principal, max_principal, max_term_periods)

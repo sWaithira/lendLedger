@@ -9,6 +9,7 @@ export default function More() {
         can('REPORT_VIEW') && { to: '/performance', title: 'Performance', sub: 'How the business did over any months' },
         can('LOAN_CREATE') && { to: '/import', title: 'Import from Excel', sub: 'Add many borrowers and loans at once' },
         can('SETTINGS_MANAGE') && { to: '/settings', title: 'Settings', sub: 'Lending rules and products' },
+        { to: '/profile', title: 'Profile', sub: 'Your account and password' },
     ].filter(Boolean)
 
     return (

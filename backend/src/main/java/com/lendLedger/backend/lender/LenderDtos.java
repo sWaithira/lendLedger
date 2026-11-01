@@ -74,7 +74,7 @@ public final class LenderDtos {
             @Email(message = "Enter a valid email address")
             @Size(max = 200, message = "Email is too long") String email,
             @NotBlank(message = "Password is required")
-            @Size(min = 10, max = 100, message = "Password must be 10 to 100 characters") String password,
+            @Size(max = 100, message = "Password is too long") String password,
             @Size(max = 100, message = "Access code is too long") String accessCode,
             @NotNull(message = "Your first product is required") @Valid ProductInput product) { }
 
