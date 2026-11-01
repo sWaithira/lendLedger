@@ -140,7 +140,7 @@ export default function LoanDetail() {
                                 <div key={p.id} className="row static">
                                     <div className="grow">
                                         <div className="title money">
-                                            {formatMoney(p.amount)} {p.reversed && <Badge tone="gray">Undone</Badge>}
+                                            {formatMoney(p.amount)} {p.reversed && <Badge tone="gray">Reversed</Badge>}
                                         </div>
                                         <div className="sub">
                                             {formatDate(p.paymentDate)} · {METHOD_LABEL[p.method] || p.method}
@@ -149,11 +149,11 @@ export default function LoanDetail() {
                                         <div className="sub">
                                             {p.allocations.map((a) => `${COMPONENT_LABEL[a.component]} ${formatMoney(a.amount)}`).join(' · ')}
                                         </div>
-                                        {p.reversed && <div className="sub">Undone: {p.reversalReason}</div>}
+                                        {p.reversed && <div className="sub">Reversed: {p.reversalReason}</div>}
                                     </div>
                                     {can('REPAYMENT_REVERSE') && p.id === reversibleId && p.method !== 'ROLLOVER' && (
                                         <Button variant="danger" onClick={() => setReversing(p)}>
-                                            Undo payment
+                                            Reverse
                                         </Button>
                                     )}
                                 </div>
