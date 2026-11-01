@@ -6,7 +6,6 @@ import java.time.temporal.TemporalAccessor;
 /**
  * Builds RFC 4180 CSV for Excel: UTF-8 with a byte-order mark (so names with accents open correctly),
  * CRLF line endings, quoting where needed.
- *
  * Text cells that start with = + - @ (or a tab / carriage return) are prefixed with an apostrophe, so a
  * borrower called "=HYPERLINK(...)" cannot run as a formula when someone opens the export (CSV injection).
  * Numbers and dates are written as-is, so negative amounts stay numeric.
@@ -30,6 +29,7 @@ final class CsvWriter {
 
     static String cell(Object value) {
         if (value == null) return "";
+        if (value instanceof TextCell t) return "\"=\"\"" + t.value() + "\"\"\"";
         if (value instanceof BigDecimal d) return d.toPlainString();
         if (value instanceof Number || value instanceof Boolean || value instanceof TemporalAccessor) {
             return value.toString();
@@ -40,6 +40,15 @@ final class CsvWriter {
                 || text.indexOf('\n') >= 0 || text.indexOf('\r') >= 0;
         return needsQuotes ? '"' + text.replace("\"", "\"\"") + '"' : text;
     }
+
+    /** A cell Excel must keep as text, such as 0712345678 (Excel would drop the leading zero). Only digits, + and spaces are kept. */
+    static Object text(String value) {
+        if (value == null || value.isBlank()) return null;
+        String safe = value.replaceAll("[^0-9+ ]", "");
+        return safe.isEmpty() ? null : new TextCell(safe);
+    }
+
+    private record TextCell(String value) { }
 
     private static boolean isFormulaStart(char c) {
         return c == '=' || c == '+' || c == '-' || c == '@' || c == '\t' || c == '\r';
