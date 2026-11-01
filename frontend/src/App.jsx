@@ -9,7 +9,6 @@ import ImportData from './pages/ImportData.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Performance from './pages/Performance.jsx'
 import Platform from './pages/Platform.jsx'
-import More from './pages/More.jsx'
 import Profile from './pages/Profile.jsx'
 import Overdue from './pages/Overdue.jsx'
 import Borrowers from './pages/Borrowers.jsx'
@@ -54,8 +53,11 @@ function Shell() {
                                     <Icon name="gear" /> Settings
                                 </NavLink>
                             )}
-                            <NavLink className="nav-more" to="/more">
-                                <Icon name="gear" /> More
+                            <NavLink className="nav-desktop" to="/profile">
+                                <Icon name="people" /> Profile
+                            </NavLink>
+                            <NavLink className="nav-more" to="/profile">
+                                <Icon name="gear" /> Profile
                             </NavLink>
                         </>
                     )}
@@ -121,7 +123,7 @@ export default function App() {
                 <Route path="loans/:id" element={<LoanDetail />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="import" element={<ImportData />} />
-                <Route path="more" element={<More />} />
+                <Route path="more" element={<Navigate to="/profile" replace />} />
                 <Route path="profile" element={<Profile />} />
                 <Route path="platform" element={<Platform />} />
             </Route>
