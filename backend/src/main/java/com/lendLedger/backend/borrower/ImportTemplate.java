@@ -43,7 +43,7 @@ final class ImportTemplate {
                     "Phone: a Kenyan number such as 0712345678 or +254712345678.",
                     "A loan finds its borrower by Borrower phone. The borrower can be on the Borrowers sheet or already in LendLedger.",
                     "Amount: a number, for example 3223 or 3223.50.",
-                    "Issue date: 2026-10-01 (year-month-day) or 01/10/2026. It cannot be in the future.",
+                    "Issue date: 2026-10-01 (year-month-day) or 01/10/2026. Leave it empty to use today's date. It cannot be in the future.",
                     "Term (months): a whole number, for example 1.",
                     "Product: the product name as it appears in Settings. Leave it empty if you offer only one product.",
                     "Payments are not imported. Record them in LendLedger after the import.",

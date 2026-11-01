@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
@@ -256,8 +257,9 @@ public class ImportService {
             if (amount == null || amount.signum() <= 0) problems.add("Amount must be a positive number");
             else if (amount.stripTrailingZeros().scale() > 2) problems.add("Amount can have at most 2 decimal places");
 
-            LocalDate date = parseDate(r.get("issuedate"));
-            if (date == null) problems.add("Issue date is missing or not a valid date (use 2026-10-01)");
+            String rawDate = r.get("issuedate").trim();
+            LocalDate date = rawDate.isEmpty() ? LocalDate.now(ZoneId.of("Africa/Nairobi")) : parseDate(rawDate);
+            if (date == null) problems.add("Issue date is not a valid date (use 2026-10-01, or leave it empty for today)");
 
             Integer term = parseTerm(r.get("termmonths"));
             if (term == null) problems.add("Term must be a whole number of months between 1 and 60");
