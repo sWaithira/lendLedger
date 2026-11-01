@@ -155,7 +155,7 @@ public class DashboardService {
                 "outstanding_principal", "outstanding_interest", "outstanding_penalty", "outstanding_total", "as_of");
         for (LoanRow row : rows) {
             LoanDtos.LoanView v = loanService.toView(row, allocated.getOrDefault(row.id(), Map.of()), today);
-            csv.row(LoanDtos.reference(row.loanNumber()), row.borrowerName(), phone(contacts, row.borrowerId()),
+            csv.row(LoanDtos.reference(row.loanNumber()), row.borrowerName(), CsvWriter.text(phone(contacts, row.borrowerId())),
                     row.productName(), row.principal(), row.currency(), row.issueDate(), row.dueDate(),
                     row.termPeriods(), row.status(), v.displayStatus(), v.daysOverdue(), v.outstanding().principal(),
                     v.outstanding().interest(), v.outstanding().penalty(), v.outstanding().total(), v.asOf());
@@ -193,7 +193,7 @@ public class DashboardService {
                 "overdue_periods", "outstanding_principal", "outstanding_interest", "outstanding_penalty",
                 "outstanding_total", "last_payment_date");
         for (DashboardDtos.OverdueItem i : items) {
-            csv.row(LoanDtos.reference(i.loanNumber()), i.borrowerName(), i.borrowerPhone(), i.principal(), i.dueDate(),
+            csv.row(LoanDtos.reference(i.loanNumber()), i.borrowerName(), CsvWriter.text(i.borrowerPhone()), i.principal(), i.dueDate(),
                     i.daysOverdue(), i.overduePeriods(), i.outstanding().principal(), i.outstanding().interest(),
                     i.outstanding().penalty(), i.outstanding().total(), i.lastPaymentDate());
         }
