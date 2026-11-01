@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, Navigate, useLocation } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { describeError } from '../api.js'
 import { useAuth } from '../auth.jsx'
 import { Button, Field } from '../components/ui.jsx'
@@ -63,7 +63,7 @@ export default function Login() {
                     Sign in
                 </Button>
                 <p className="muted" style={{ marginTop: 16, textAlign: 'center' }}>
-                    New lender? <Link to="/register">Create an account</Link>
+                    Need an account? Ask your LendLedger administrator.
                 </p>
             </form>
         </div>

@@ -31,6 +31,11 @@ class PlatformController {
         return service.lenders();
     }
 
+    @PostMapping("/lenders")
+    List<PlatformDtos.LenderRow> create(@RequestBody @Valid PlatformDtos.CreateLenderRequest body) {
+        return service.createLender(body);
+    }
+
     @PostMapping("/lenders/{id}/suspend")
     List<PlatformDtos.LenderRow> suspend(@PathVariable UUID id,
                                          @RequestBody(required = false) @Valid PlatformDtos.ReasonRequest body) {

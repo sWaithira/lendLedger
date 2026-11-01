@@ -14,6 +14,7 @@ export default function Platform() {
     const allowed = can('PLATFORM_MANAGE')
     const { data, error, loading, reload } = useFetch(allowed ? '/api/v1/platform/lenders' : null)
     const [managing, setManaging] = useState(null)
+    const [creating, setCreating] = useState(false)
     const [notice, setNotice] = useState('')
 
     function done(message) {
@@ -53,6 +54,9 @@ export default function Platform() {
 
             {data && (
                 <>
+                    <div className="card-actions" style={{ marginBottom: 16 }}>
+                        <Button onClick={() => setCreating(true)}>Add lender</Button>
+                    </div>
                     <div className="tiles">
                         <div className="tile">
                             <small>Lenders</small>
@@ -74,7 +78,7 @@ export default function Platform() {
 
                     {lenders.length === 0 && (
                         <div className="list">
-                            <Empty title="No lenders yet">Lenders who register appear here.</Empty>
+                            <Empty title="No lenders yet">Add your first lender to get started.</Empty>
                         </div>
                     )}
                     <div className="list">
@@ -111,6 +115,15 @@ export default function Platform() {
             )}
 
             {managing && <ManageSheet lender={managing} onClose={() => setManaging(null)} onDone={done} />}
+            {creating && (
+                <CreateSheet
+                    onClose={() => setCreating(false)}
+                    onDone={(message) => {
+                        setCreating(false)
+                        done(message)
+                    }}
+                />
+            )}
         </>
     )
 }
@@ -209,6 +222,83 @@ function ManageSheet({ lender, onClose, onDone }) {
             >
                 Set owner password
             </Button>
+        </Sheet>
+    )
+}
+
+function CreateSheet({ onClose, onDone }) {
+    const [f, setF] = useState({ businessName: '', ownerName: '', email: '', password: '', plan: 'TRIAL', expiresOn: '' })
+    const [error, setError] = useState('')
+    const [busy, setBusy] = useState(false)
+    const set = (key) => (e) => setF({ ...f, [key]: e.target.value })
+
+    async function submit(e) {
+        e.preventDefault()
+        setBusy(true)
+        setError('')
+        try {
+            await api.post('/api/v1/platform/lenders', {
+                ...f,
+                businessName: f.businessName.trim(),
+                ownerName: f.ownerName.trim(),
+                email: f.email.trim(),
+                expiresOn: f.expiresOn || null,
+            })
+            onDone(`${f.businessName.trim()} was added. Give ${f.email.trim()} the password you set.`)
+        } catch (err) {
+            setError(describeError(err))
+            setBusy(false)
+        }
+    }
+
+    return (
+        <Sheet
+            title="Add lender"
+            onClose={onClose}
+            footer={
+                <>
+                    <Button variant="secondary" type="button" onClick={onClose}>
+                        Cancel
+                    </Button>
+                    <Button type="submit" form="create-lender" busy={busy}>
+                        Add lender
+                    </Button>
+                </>
+            }
+        >
+            {error && (
+                <div className="notice error" role="alert">
+                    {error}
+                </div>
+            )}
+            <form id="create-lender" onSubmit={submit}>
+                <Field label="Business name">
+                    <input value={f.businessName} onChange={set('businessName')} required minLength={2} maxLength={120} autoComplete="off" />
+                </Field>
+                <Field label="Owner name">
+                    <input value={f.ownerName} onChange={set('ownerName')} required minLength={2} maxLength={120} autoComplete="off" />
+                </Field>
+                <Field label="Owner email">
+                    <input type="email" value={f.email} onChange={set('email')} required autoComplete="off" />
+                </Field>
+                <Field label="Temporary password" hint="At least 10 characters. Give it to the owner privately.">
+                    <PasswordInput value={f.password} onChange={set('password')} required minLength={10} maxLength={100} autoComplete="new-password" />
+                </Field>
+                <div className="pair">
+                    <Field label="Plan">
+                        <select value={f.plan} onChange={set('plan')}>
+                            {Object.entries(PLAN_LABEL).map(([value, label]) => (
+                                <option key={value} value={value}>
+                                    {label}
+                                </option>
+                            ))}
+                        </select>
+                    </Field>
+                    <Field label="Expires on" hint="Empty means no expiry.">
+                        <input type="date" value={f.expiresOn} onChange={set('expiresOn')} />
+                    </Field>
+                </div>
+            </form>
         </Sheet>
     )
 }

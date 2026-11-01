@@ -9,6 +9,7 @@ import java.util.UUID;
 
 import com.lendLedger.backend.audit.AuditService;
 import com.lendLedger.backend.common.ApiException;
+import com.lendLedger.backend.lender.LenderService;
 import com.lendLedger.backend.security.CurrentUser;
 
 import org.springframework.http.HttpStatus;
@@ -26,11 +27,13 @@ class PlatformService {
     private final PlatformRepository repo;
     private final AuditService audit;
     private final PasswordEncoder encoder;
+    private final LenderService lenderService;
 
-    PlatformService(PlatformRepository repo, AuditService audit, PasswordEncoder encoder) {
+    PlatformService(PlatformRepository repo, AuditService audit, PasswordEncoder encoder, LenderService lenderService) {
         this.repo = repo;
         this.audit = audit;
         this.encoder = encoder;
+        this.lenderService = lenderService;
     }
 
     @Transactional(readOnly = true)
@@ -56,6 +59,18 @@ class PlatformService {
         if (repo.setSubscription(tenantId, plan, expiresOn) == 0) throw notFound();
         audit.recordAs(tenantId, CurrentUser.userId(), "SUBSCRIPTION_CHANGED", "TENANT", tenantId, null,
                 Map.of("plan", plan, "expiresOn", expiresOn == null ? "none" : expiresOn.toString()));
+        return repo.lenders();
+    }
+
+    /** Creates a lender with its owner and a starter product. The temporary password is never logged or audited. */
+    @Transactional
+    List<PlatformDtos.LenderRow> createLender(PlatformDtos.CreateLenderRequest r) {
+        if (!PLANS.contains(r.plan())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "invalid_plan", "Choose Trial, Standard or Pro");
+        }
+        UUID tenantId = lenderService.createForOperator(r.businessName(), r.ownerName(), r.email(), r.password());
+        repo.setSubscription(tenantId, r.plan(), r.expiresOn());
+        audit.recordAs(tenantId, CurrentUser.userId(), "LENDER_CREATED", "TENANT", tenantId, null, Map.of("plan", r.plan()));
         return repo.lenders();
     }
 
