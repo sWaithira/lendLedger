@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api, describeError } from '../api.js'
 import { useAuth } from '../auth.jsx'
+import IdPhotos from '../components/IdPhotos.jsx'
 import LoanList from '../components/LoanList.jsx'
-import { Badge, Button, Empty, ErrorNote, Field, Loading, PageHead, Sheet } from '../components/ui.jsx'
+import { Button, Empty, ErrorNote, Field, Loading, PageHead, Sheet } from '../components/ui.jsx'
 import { formatDate } from '../format.js'
 import { useFetch } from '../hooks.js'
 
@@ -67,7 +68,7 @@ export default function BorrowerDetail() {
                             {b.nationalId ? (
                                 <>
                                     <span className="num">{b.nationalId}</span>{' '}
-                                    <Badge tone={b.kycStatus === 'VERIFIED' ? 'green' : 'orange'}>{b.kycStatus === 'VERIFIED' ? 'Verified' : 'Not verified'}</Badge>
+                                    {/* The ID status is shown in the ID photos section below */}
                                 </>
                             ) : (
                                 'Not given'
@@ -87,6 +88,8 @@ export default function BorrowerDetail() {
                         </div>
                     )}
                 </div>
+                <h2 className="section-title">ID photos</h2>
+                <IdPhotos borrowerId={b.id} canWrite={can('BORROWER_WRITE')} />
                 {b.note && (
                     <>
                         <h2 className="section-title">Note</h2>
