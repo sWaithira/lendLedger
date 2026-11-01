@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { api, describeError } from '../api.js'
 import { useAuth } from '../auth.jsx'
+import PasswordChecklist from '../components/PasswordChecklist.jsx'
 import PasswordInput from '../components/PasswordInput.jsx'
+import { isStrong } from '../passwordRules.js'
 import { Badge, Button, Empty, ErrorNote, Field, Loading, PageHead, Sheet } from '../components/ui.jsx'
 import { formatDate, todayIso } from '../format.js'
 import { useFetch } from '../hooks.js'
@@ -211,13 +213,16 @@ function ManageSheet({ lender, onClose, onDone }) {
             </div>
 
             <h3 className="section-title" style={{ marginTop: 28 }}>Owner password</h3>
-            <Field label="New password" hint="At least 10 characters. There is no change-password screen yet, so choose one the owner will keep.">
-                <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} minLength={10} maxLength={100} autoComplete="new-password" />
+            <Field label="New password" hint="The owner must choose their own password when they next sign in.">
+                <>
+                    <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} maxLength={100} autoComplete="new-password" />
+                    <PasswordChecklist password={password} />
+                </>
             </Field>
             <Button
                 variant="secondary"
                 busy={busy}
-                disabled={password.length < 10}
+                disabled={!isStrong(password)}
                 onClick={() => run(() => api.post(`${base}/owner-password`, { password }), 'Owner password updated.')}
             >
                 Set owner password
@@ -260,7 +265,7 @@ function CreateSheet({ onClose, onDone }) {
                     <Button variant="secondary" type="button" onClick={onClose}>
                         Cancel
                     </Button>
-                    <Button type="submit" form="create-lender" busy={busy}>
+                    <Button type="submit" form="create-lender" busy={busy} disabled={!isStrong(f.password)}>
                         Add lender
                     </Button>
                 </>
@@ -281,8 +286,11 @@ function CreateSheet({ onClose, onDone }) {
                 <Field label="Owner email">
                     <input type="email" value={f.email} onChange={set('email')} required autoComplete="off" />
                 </Field>
-                <Field label="Temporary password" hint="At least 10 characters. Give it to the owner privately.">
-                    <PasswordInput value={f.password} onChange={set('password')} required minLength={10} maxLength={100} autoComplete="new-password" />
+                <Field label="Temporary password" hint="Give it to the owner privately. They choose their own on first sign-in.">
+                    <>
+                        <PasswordInput value={f.password} onChange={set('password')} required maxLength={100} autoComplete="new-password" />
+                        <PasswordChecklist password={f.password} />
+                    </>
                 </Field>
                 <div className="pair">
                     <Field label="Plan">

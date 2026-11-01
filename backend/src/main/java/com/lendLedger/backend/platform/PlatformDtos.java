@@ -30,7 +30,7 @@ public final class PlatformDtos {
             @Email(message = "Enter a valid email address")
             @Size(max = 200, message = "Email is too long") String email,
             @NotBlank(message = "Enter a temporary password")
-            @Size(min = 10, max = 100, message = "Password must be 10 to 100 characters") String password,
+            @Size(max = 100, message = "Password is too long") String password,
             @NotBlank(message = "Choose a plan") String plan,
             LocalDate expiresOn) { }
 

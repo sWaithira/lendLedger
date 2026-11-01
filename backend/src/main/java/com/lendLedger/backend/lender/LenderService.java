@@ -14,6 +14,7 @@ import com.lendLedger.backend.audit.AuditService;
 import com.lendLedger.backend.common.ApiException;
 import com.lendLedger.backend.common.TenantClock;
 import com.lendLedger.backend.security.CurrentUser;
+import com.lendLedger.backend.security.PasswordPolicy;
 import com.lendLedger.backend.security.LendLedgerPrincipal;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -60,6 +61,7 @@ public class LenderService {
             throw new ApiException(HttpStatus.FORBIDDEN, "invalid_access_code", "That access code is not valid.");
         }
         String email = request.email().trim();
+        PasswordPolicy.require(request.password(), email);
         if (request.password().equalsIgnoreCase(email)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "weak_password", "The password cannot be the same as the email.");
         }
@@ -82,6 +84,7 @@ public class LenderService {
     @Transactional
     public UUID createForOperator(String businessName, String ownerName, String email, String password) {
         String cleanEmail = email.trim();
+        PasswordPolicy.require(password, cleanEmail);
         if (password.equalsIgnoreCase(cleanEmail)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "weak_password", "The password cannot be the same as the email.");
         }
@@ -90,6 +93,7 @@ public class LenderService {
         try {
             repo.insertTenant(tenantId, businessName.trim());
             repo.insertOwner(ownerId, tenantId, ownerName.trim(), cleanEmail, encoder.encode(password));
+            repo.requirePasswordChange(tenantId, ownerId);
         } catch (DuplicateKeyException e) {
             throw new ApiException(HttpStatus.CONFLICT, "email_taken", "An account with this email already exists.");
         }

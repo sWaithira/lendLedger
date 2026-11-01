@@ -11,6 +11,7 @@ import com.lendLedger.backend.audit.AuditService;
 import com.lendLedger.backend.common.ApiException;
 import com.lendLedger.backend.lender.LenderService;
 import com.lendLedger.backend.security.CurrentUser;
+import com.lendLedger.backend.security.PasswordPolicy;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -90,8 +91,9 @@ class PlatformService {
     /** Sets the owner's password (the lender has no change-password screen yet). The password is never logged or audited. */
     @Transactional
     List<PlatformDtos.LenderRow> resetOwnerPassword(UUID tenantId, String password) {
-        if (password.length() < 10) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "weak_password", "Password must be 10 to 100 characters");
+        PasswordPolicy.require(password, null);
+        if (password.length() > 100) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "weak_password", "Password is too long");
         }
         if (repo.setOwnerPassword(tenantId, encoder.encode(password)) == 0) {
             throw new ApiException(HttpStatus.NOT_FOUND, "owner_not_found", "This lender has no owner account");

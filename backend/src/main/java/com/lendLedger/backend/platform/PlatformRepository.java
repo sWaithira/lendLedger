@@ -77,7 +77,7 @@ class PlatformRepository {
     }
 
     int setOwnerPassword(UUID tenantId, String passwordHash) {
-        return jdbc.sql("UPDATE app_user SET password_hash = :hash WHERE tenant_id = :tenant AND role = 'OWNER'")
+        return jdbc.sql("UPDATE app_user SET password_hash = :hash, must_change_password = TRUE WHERE tenant_id = :tenant AND role = 'OWNER'")
                 .param("hash", passwordHash)
                 .param("tenant", tenantId)
                 .update();

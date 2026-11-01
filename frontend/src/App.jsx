@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard.jsx'
 import Performance from './pages/Performance.jsx'
 import Platform from './pages/Platform.jsx'
 import More from './pages/More.jsx'
+import Profile from './pages/Profile.jsx'
 import Overdue from './pages/Overdue.jsx'
 import Borrowers from './pages/Borrowers.jsx'
 import BorrowerDetail from './pages/BorrowerDetail.jsx'
@@ -60,7 +61,7 @@ function Shell() {
                     )}
                 </nav>
                 <div className="me">
-                    <strong>{user.name}</strong>
+                    <Link to="/profile"><strong>{user.name}</strong></Link>
                     <small>{ROLE_LABEL[user.role] || user.role}</small>
                     <button className="btn plain" type="button" onClick={logout}>
                         Sign out
@@ -79,6 +80,7 @@ function RequireAuth() {
     const location = useLocation()
     if (loading) return <div className="signin" aria-busy="true" />
     if (!user) return <Navigate to="/login" replace state={{ from: location }} />
+    if (user.mustChangePassword && location.pathname !== '/profile') return <Navigate to="/profile" replace />
     return <Shell />
 }
 
@@ -120,6 +122,7 @@ export default function App() {
                 <Route path="settings" element={<Settings />} />
                 <Route path="import" element={<ImportData />} />
                 <Route path="more" element={<More />} />
+                <Route path="profile" element={<Profile />} />
                 <Route path="platform" element={<Platform />} />
             </Route>
             <Route path="*" element={<NotFound />} />

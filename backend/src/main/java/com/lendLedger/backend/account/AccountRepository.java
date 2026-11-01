@@ -1,0 +1,42 @@
+package com.lendLedger.backend.account;
+
+import java.util.Optional;
+import java.util.UUID;
+
+import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.stereotype.Repository;
+
+@Repository
+class AccountRepository {
+
+    private final JdbcClient jdbc;
+
+    AccountRepository(JdbcClient jdbc) {
+        this.jdbc = jdbc;
+    }
+
+    boolean mustChange(UUID tenantId, UUID userId) {
+        return jdbc.sql("SELECT must_change_password FROM app_user WHERE tenant_id = :tenant AND id = :id")
+                .param("tenant", tenantId)
+                .param("id", userId)
+                .query(Boolean.class)
+                .optional()
+                .orElse(false);
+    }
+
+    Optional<String> hash(UUID tenantId, UUID userId) {
+        return jdbc.sql("SELECT password_hash FROM app_user WHERE tenant_id = :tenant AND id = :id")
+                .param("tenant", tenantId)
+                .param("id", userId)
+                .query(String.class)
+                .optional();
+    }
+
+    void setPassword(UUID tenantId, UUID userId, String hash) {
+        jdbc.sql("UPDATE app_user SET password_hash = :hash, must_change_password = FALSE WHERE tenant_id = :tenant AND id = :id")
+                .param("hash", hash)
+                .param("tenant", tenantId)
+                .param("id", userId)
+                .update();
+    }
+}
