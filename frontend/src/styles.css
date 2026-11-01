@@ -351,3 +351,36 @@ input[type="checkbox"] { width: 22px; min-height: 22px; padding: 0; flex: none; 
 /* Month and date inputs must not push a two-column row past the screen edge on phones */
 .pair > * { min-width: 0; }
 .pair input { min-width: 0; max-width: 100%; }
+
+/* Performance charts: donut and bars. Colours have light and dark values. */
+.pc { --pc-paid:#248a3d; --pc-rolled:#6e6e73; --pc-ontrack:#0a64d8; --pc-overdue:#d70015; --pc-bar:#0a64d8; --pc-ring:rgba(120,120,128,.2); }
+@media (prefers-color-scheme: dark) {
+  .pc { --pc-paid:#30d158; --pc-rolled:#98989d; --pc-ontrack:#64a8ff; --pc-overdue:#ff6961; --pc-bar:#64a8ff; --pc-ring:rgba(235,235,245,.2); }
+}
+.pc-wrap { display:flex; flex-wrap:wrap; align-items:center; gap:24px; }
+.pc-donut { width:160px; height:160px; flex:none; }
+.pc-ring { fill:none; stroke:var(--pc-ring); stroke-width:14; }
+.pc-arc { fill:none; stroke-width:14; }
+.pc-arc.pc-paid { stroke:var(--pc-paid); }
+.pc-arc.pc-rolled { stroke:var(--pc-rolled); }
+.pc-arc.pc-ontrack { stroke:var(--pc-ontrack); }
+.pc-arc.pc-overdue { stroke:var(--pc-overdue); }
+.pc-total { font-size:26px; font-weight:700; fill:currentColor; }
+.pc-sub { font-size:10px; fill:currentColor; opacity:.7; }
+.pc-legend { list-style:none; margin:0; padding:0; display:grid; gap:8px; min-width:0; }
+.pc-legend li { display:flex; align-items:center; gap:8px; }
+.pc-sw { width:12px; height:12px; border-radius:3px; flex:none; }
+.pc-sw.pc-paid { background:var(--pc-paid); }
+.pc-sw.pc-rolled { background:var(--pc-rolled); }
+.pc-sw.pc-ontrack { background:var(--pc-ontrack); }
+.pc-sw.pc-overdue { background:var(--pc-overdue); }
+.pc-bars { list-style:none; margin:0; padding:0; display:grid; gap:12px; }
+.pc-bars li { display:grid; grid-template-columns:90px minmax(0,1fr) auto; gap:12px; align-items:center; }
+.pc-lane { height:10px; border-radius:5px; background:var(--pc-ring); overflow:hidden; }
+.pc-fill { display:block; height:100%; background:var(--pc-bar); border-radius:5px; }
+
+/* keep rows inside the screen on phones */
+.row .grow, .row-main .grow { min-width: 0; }
+.row .title, .row .sub { overflow-wrap: anywhere; }
+html, body { max-width: 100%; overflow-x: clip; }
+@media (max-width: 640px) { .row.static { flex-wrap: wrap; } }
