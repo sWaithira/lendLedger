@@ -35,47 +35,54 @@ export default function Login() {
 
     return (
         <div className="signin">
-            <form className="panel" onSubmit={submit}>
-                <h1>Sign in to LendLedger</h1>
-                <p className="lede">Loans, repayments and your portfolio in one place.</p>
-                {location.state?.created && (
-                    <div className="notice info" role="status">
-                        Your account was created. Sign in to continue.
-                    </div>
-                )}
-                {error && (
-                    <div className="notice error" role="alert">
-                        {error}
-                    </div>
-                )}
-                <Field label="Email">
-                    <input type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus={!location.state?.email} />
-                </Field>
-                <Field label="Password">
-                    <PasswordInput
-                        autoComplete="current-password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        autoFocus={Boolean(location.state?.email)}
-                    />
-                </Field>
-                <Button type="submit" busy={busy}>
-                    Sign in
-                </Button>
-                {(DEMO_WHATSAPP || DEMO_EMAIL) && (
-                    <p className="muted" style={{ marginTop: 16, textAlign: 'center' }}>
-                        New lender?{' '}
-                        {DEMO_WHATSAPP && (
-                            <a href={`https://wa.me/${DEMO_WHATSAPP}?text=${encodeURIComponent('Hello, I would like a LendLedger demo.')}`} target="_blank" rel="noreferrer">
-                                Book a demo
-                            </a>
-                        )}
-                        {DEMO_WHATSAPP && DEMO_EMAIL && ' · '}
-                        {DEMO_EMAIL && <a href={`mailto:${DEMO_EMAIL}?subject=${encodeURIComponent('LendLedger demo request')}`}>Email us</a>}
-                    </p>
-                )}
-            </form>
+            <div className="signin-wrap">
+                <aside className="signin-art">
+                    <img src="/hero-ledger.svg" alt="" width="480" height="360" />
+                    <p className="signin-tag">Know who owes what, to the shilling.</p>
+                    <p className="muted">Receipts in one tap, on WhatsApp.</p>
+                </aside>
+                <form className="panel" onSubmit={submit}>
+                    <h1>Sign in to LendLedger</h1>
+                    <p className="lede">Loans, repayments and your portfolio in one place.</p>
+                    {location.state?.created && (
+                        <div className="notice info" role="status">
+                            Your account was created. Sign in to continue.
+                        </div>
+                    )}
+                    {error && (
+                        <div className="notice error" role="alert">
+                            {error}
+                        </div>
+                    )}
+                    <Field label="Email">
+                        <input type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus={!location.state?.email} />
+                    </Field>
+                    <Field label="Password">
+                        <PasswordInput
+                            autoComplete="current-password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                            autoFocus={Boolean(location.state?.email)}
+                        />
+                    </Field>
+                    <Button type="submit" busy={busy}>
+                        Sign in
+                    </Button>
+                    {(DEMO_WHATSAPP || DEMO_EMAIL) && (
+                        <p className="muted" style={{ marginTop: 16, textAlign: 'center' }}>
+                            New lender?{' '}
+                            {DEMO_WHATSAPP && (
+                                <a href={`https://wa.me/${DEMO_WHATSAPP}?text=${encodeURIComponent('Hello, I would like a LendLedger demo.')}`} target="_blank" rel="noreferrer">
+                                    Book a demo
+                                </a>
+                            )}
+                            {DEMO_WHATSAPP && DEMO_EMAIL && ' · '}
+                            {DEMO_EMAIL && <a href={`mailto:${DEMO_EMAIL}?subject=${encodeURIComponent('LendLedger demo request')}`}>Email us</a>}
+                        </p>
+                    )}
+                </form>
+            </div>
         </div>
     )
 }
