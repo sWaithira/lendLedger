@@ -198,8 +198,8 @@ function EditBorrowerSheet({ borrower, onClose, onSaved }) {
                 <Field label="Email (optional)">
                     <input type="email" value={form.email} onChange={set('email')} maxLength={200} autoComplete="off" />
                 </Field>
-                <Field label="ID number (optional)">
-                    <input value={form.nationalId} onChange={set('nationalId')} maxLength={40} autoComplete="off" />
+                <Field label="ID number">
+                    <input value={form.nationalId} onChange={set('nationalId')} required maxLength={40} autoComplete="off" />
                 </Field>
                 <Field label="Note (optional)">
                     <textarea value={form.note} onChange={set('note')} maxLength={1000} />

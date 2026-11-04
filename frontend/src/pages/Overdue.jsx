@@ -19,7 +19,7 @@ export default function Overdue() {
         <>
             <PageHead
                 title="Overdue"
-                subtitle="Past the grace period, longest first. Contact them, then record what they say."
+                subtitle="Past their due date and grace period, longest overdue first. Tap Contact to reach them."
                 actions={
                     <a className="btn secondary" href="/api/v1/exports/overdue.csv" download>
                         Download CSV

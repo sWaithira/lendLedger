@@ -38,6 +38,7 @@ export default function Dashboard() {
     const summary = useFetch(`/api/v1/dashboard/summary?from=${from}&to=${to}`)
     const monthly = useFetch(can('REPORT_VIEW') ? `/api/v1/dashboard/monthly?months=6&end=${to}` : null)
     const overdue = useFetch('/api/v1/overdue?size=3')
+    const borrowers = useFetch(can('BORROWER_READ') ? '/api/v1/borrowers?size=1' : null)
 
     const s = summary.data
     const p = s?.portfolio
@@ -45,6 +46,24 @@ export default function Dashboard() {
     return (
         <>
             <PageHead title="Overview" subtitle={`${today} · Welcome back, ${user.name.split(' ')[0]}`} />
+            {borrowers.data && borrowers.data.totalItems === 0 && (
+                <section className="card" aria-label="Get started" style={{ marginBottom: 16 }}>
+                    <h2 className="product-name">Add your first borrower</h2>
+                    <p className="muted" style={{ marginTop: 6 }}>
+                        Add a borrower, then create their first loan. Or bring many at once from Excel.
+                    </p>
+                    <div className="card-actions">
+                        <Link className="btn primary" to="/borrowers">
+                            Add your first borrower
+                        </Link>
+                        {can('LOAN_CREATE') && (
+                            <Link className="btn secondary" to="/import">
+                                Import from Excel
+                            </Link>
+                        )}
+                    </div>
+                </section>
+            )}
             <div className="month-nav" role="group" aria-label="Month shown">
                 <Button variant="secondary" aria-label="Previous month" onClick={() => setMonth(shiftMonth(month, -1))}>
                     ‹
@@ -149,23 +168,6 @@ export default function Dashboard() {
                         See everyone who is overdue
                     </Link>
                 </div>
-            )}
-
-            {can('REPORT_VIEW') && (
-                <>
-                    <h2 className="section-title">Reports</h2>
-                    <div className="card downloads">
-                        <a className="btn secondary" href="/api/v1/exports/loans.csv" download>
-                            All loans (CSV)
-                        </a>
-                        <a className="btn secondary" href={`/api/v1/exports/repayments.csv?from=${from}&to=${to}`} download>
-                            Payments, {monthLabel} (CSV)
-                        </a>
-                        <a className="btn secondary" href="/api/v1/exports/overdue.csv" download>
-                            Overdue (CSV)
-                        </a>
-                    </div>
-                </>
             )}
         </>
     )

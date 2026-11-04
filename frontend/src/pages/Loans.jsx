@@ -22,7 +22,6 @@ export default function Loans() {
         <>
             <PageHead
                 title="Loans"
-                subtitle="What is owed, and when."
                 actions={
                     can('LOAN_CREATE') && (
                         <Link className="btn primary" to="/loans/new">

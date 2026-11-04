@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Navigate } from 'react-router-dom'
 import { api, describeError } from '../api.js'
 import { useAuth } from '../auth.jsx'
 import PasswordChecklist from '../components/PasswordChecklist.jsx'
@@ -25,16 +26,7 @@ export default function Platform() {
         reload()
     }
 
-    if (!allowed) {
-        return (
-            <>
-                <PageHead title="Platform" subtitle="Lenders and subscriptions." />
-                <div className="list">
-                    <Empty title="Not available">This area is for the platform operator.</Empty>
-                </div>
-            </>
-        )
-    }
+    if (!allowed) return <Navigate to="/" replace />
 
     const lenders = data || []
     const today = todayIso()
@@ -45,7 +37,7 @@ export default function Platform() {
 
     return (
         <>
-            <PageHead title="Platform" subtitle="Lenders and subscriptions. You see counts only, never borrower or loan data." />
+            <PageHead title="Platform" subtitle="Lenders and subscriptions." />
             <ErrorNote error={error} onRetry={reload} />
             {loading && !data && <Loading rows={3} />}
             {notice && (
@@ -249,7 +241,7 @@ function CreateSheet({ onClose, onDone }) {
                 email: f.email.trim(),
                 expiresOn: f.expiresOn || null,
             })
-            onDone(`${f.businessName.trim()} was added. Give ${f.email.trim()} the password you set.`)
+            onDone(`${f.businessName.trim()} was added.`)
         } catch (err) {
             setError(describeError(err))
             setBusy(false)
@@ -286,7 +278,7 @@ function CreateSheet({ onClose, onDone }) {
                 <Field label="Owner email">
                     <input type="email" value={f.email} onChange={set('email')} required autoComplete="off" />
                 </Field>
-                <Field label="Temporary password" hint="Give it to the owner privately. They choose their own on first sign-in.">
+                <Field label="Temporary password">
                     <>
                         <PasswordInput value={f.password} onChange={set('password')} required maxLength={100} autoComplete="new-password" />
                         <PasswordChecklist password={f.password} />

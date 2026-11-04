@@ -38,11 +38,10 @@ export default function Login() {
             <div className="signin-wrap">
                 <aside className="signin-art">
                     <img src="/hero-ledger.svg" alt="" width="480" height="360" />
-                    <p className="signin-tag">Know who owes what, to the shilling.</p>
-                    <p className="muted">Receipts in one tap, on WhatsApp.</p>
+                    <p className="signin-tag">Know who owes what, to the shilling!</p>
                 </aside>
                 <form className="panel" onSubmit={submit}>
-                    <h1>Sign in to LendLedger</h1>
+                    <h1>LENDLEDGER</h1>
                     <p className="lede">Loans, repayments and your portfolio in one place.</p>
                     {location.state?.created && (
                         <div className="notice info" role="status">
