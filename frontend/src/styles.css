@@ -346,7 +346,7 @@ input[type="checkbox"] { width: 22px; min-height: 22px; padding: 0; flex: none; 
 
 /* Phone bottom bar: five items. Performance and Settings move under More. */
 @media (max-width: 860px) { .nav .nav-desktop { display: none; } }
-@media (min-width: 641px) { .nav .nav-more { display: none; } }
+@media (min-width: 861px) { .nav .nav-more { display: none; } }
 
 /* Month and date inputs must not push a two-column row past the screen edge on phones */
 .pair > * { min-width: 0; }
@@ -355,7 +355,7 @@ input[type="checkbox"] { width: 22px; min-height: 22px; padding: 0; flex: none; 
 /* Performance charts: donut and bars. Colours have light and dark values. */
 .pc { --pc-paid:#248a3d; --pc-rolled:#6e6e73; --pc-ontrack:#0a64d8; --pc-overdue:#d70015; --pc-bar:#0a64d8; --pc-ring:rgba(120,120,128,.2); }
 @media (prefers-color-scheme: dark) {
-  .pc { --pc-paid:#30d158; --pc-rolled:#98989d; --pc-ontrack:#64a8ff; --pc-overdue:#ff6961; --pc-bar:#64a8ff; --pc-ring:rgba(235,235,245,.2); }
+    .pc { --pc-paid:#30d158; --pc-rolled:#98989d; --pc-ontrack:#64a8ff; --pc-overdue:#ff6961; --pc-bar:#64a8ff; --pc-ring:rgba(235,235,245,.2); }
 }
 .pc-wrap { display:flex; flex-wrap:wrap; align-items:center; gap:24px; }
 .pc-donut { width:160px; height:160px; flex:none; }
@@ -392,8 +392,8 @@ html, body { max-width: 100%; overflow-x: clip; }
 .signin-art .muted { text-align: center; }
 @media (max-width: 860px) { .signin-wrap { grid-template-columns: minmax(0, 1fr); } .signin-art { display: none; } }
 @media (prefers-reduced-motion: no-preference) {
-  .signin-art img { animation: signin-rise .8s ease-out both; }
-  @keyframes signin-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    .signin-art img { animation: signin-rise .8s ease-out both; }
+    @keyframes signin-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 }
 
 /* centred content, breadcrumbs, collapsible product cards, mobile sign out */
