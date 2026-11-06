@@ -1,14 +1,14 @@
 import { RULES } from '../passwordRules.js'
 
-/** Shows which password rules are met, as words and a mark. */
+/** Shows which password rules are met: a filled dot and green text when met. */
 export default function PasswordChecklist({ password }) {
     return (
-        <ul className="muted" aria-label="Password requirements" style={{ listStyle: 'none', margin: '8px 0 0', padding: 0, fontSize: '0.8125rem' }}>
+        <ul className="pw-rules" aria-label="Password requirements">
             {RULES.map((r) => {
                 const ok = r.test(password)
                 return (
-                    <li key={r.id} aria-label={`${r.label}: ${ok ? 'met' : 'not met'}`}>
-                        {ok ? '✓' : '○'} {r.label}
+                    <li key={r.id} className={ok ? 'ok' : ''} aria-label={`${r.label}: ${ok ? 'met' : 'not met'}`}>
+                        <i aria-hidden="true" /> {r.label}
                     </li>
                 )
             })}

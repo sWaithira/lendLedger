@@ -64,14 +64,16 @@ function ProductCard({ product, onEdit }) {
     const rule = product.currentRule
     const upcoming = product.history.find((h) => h.status === 'APPROVED' && h.effectiveFrom > todayIso())
     return (
-        <div className="card">
-            <div className="card-top">
-                <h2 className="product-name">{product.name}</h2>
+        <details className="card product-card" name="products">
+            <summary className="product-summary">
+                <strong className="product-name">{product.name}</strong>
+                <span className="muted">
+                    {formatMoney(product.minPrincipal)} to {formatMoney(product.maxPrincipal)}
+                </span>
                 <Badge tone={product.active ? 'green' : 'gray'}>{product.active ? 'Offered' : 'Not offered'}</Badge>
-            </div>
+            </summary>
             <p className="muted">
-                {formatMoney(product.minPrincipal)} to {formatMoney(product.maxPrincipal)} · up to {product.maxTermPeriods} month
-                {product.maxTermPeriods === 1 ? '' : 's'}
+                Up to {product.maxTermPeriods} month{product.maxTermPeriods === 1 ? '' : 's'}
             </p>
             {rule ? (
                 <dl className="kv" style={{ marginTop: 16 }}>
@@ -111,7 +113,7 @@ function ProductCard({ product, onEdit }) {
                     ))}
                 </ul>
             </details>
-        </div>
+        </details>
     )
 }
 

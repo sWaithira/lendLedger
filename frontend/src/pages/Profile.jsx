@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import { api, describeError } from '../api.js'
 import { useAuth } from '../auth.jsx'
 import PasswordChecklist from '../components/PasswordChecklist.jsx'
@@ -9,7 +8,7 @@ import { ROLE_LABEL } from '../format.js'
 import { isStrong } from '../passwordRules.js'
 
 export default function Profile() {
-    const { user, can, logout, markPasswordChanged } = useAuth()
+    const { user, markPasswordChanged } = useAuth()
     const forced = Boolean(user.mustChangePassword)
     const [current, setCurrent] = useState('')
     const [next, setNext] = useState('')
@@ -17,12 +16,6 @@ export default function Profile() {
     const [error, setError] = useState('')
     const [done, setDone] = useState(false)
     const [busy, setBusy] = useState(false)
-
-    const items = [
-        can('REPORT_VIEW') && { to: '/performance', title: 'Performance', sub: 'How the business did over any months' },
-        can('LOAN_CREATE') && { to: '/import', title: 'Import from Excel', sub: 'Add many borrowers and loans at once' },
-        can('SETTINGS_MANAGE') && { to: '/settings', title: 'Settings', sub: 'Lending rules and products' },
-    ].filter(Boolean)
 
     const mismatch = again !== '' && again !== next
     const ready = current !== '' && isStrong(next) && next === again
@@ -47,7 +40,7 @@ export default function Profile() {
 
     return (
         <>
-            <PageHead title="Profile" subtitle={user.name} />
+            <PageHead title="Profile" subtitle="Your account and password." />
             {forced && (
                 <div className="notice info" role="status">
                     Choose your own password to continue.
@@ -59,26 +52,6 @@ export default function Profile() {
                 </div>
             )}
 
-            {!forced && items.length > 0 && (
-                <>
-                    <h2 className="section-title">Your business</h2>
-                    <div className="list">
-                        {items.map((i) => (
-                            <Link key={i.to} to={i.to} className="row">
-                                <div className="grow">
-                                    <div className="title">{i.title}</div>
-                                    <div className="sub">{i.sub}</div>
-                                </div>
-                                <span className="chev" aria-hidden="true">
-                                    ›
-                                </span>
-                            </Link>
-                        ))}
-                    </div>
-                </>
-            )}
-
-            <h2 className="section-title" style={{ marginTop: 24 }}>Account</h2>
             <div className="card">
                 <dl className="kv">
                     <dt>Name</dt>
@@ -115,12 +88,6 @@ export default function Profile() {
                     Change password
                 </Button>
             </form>
-
-            <div style={{ marginTop: 24 }}>
-                <Button variant="secondary" onClick={logout}>
-                    Sign out
-                </Button>
-            </div>
         </>
     )
 }
