@@ -15,7 +15,6 @@ export default function ReverseSheet({ payment, onClose, onDone }) {
         setError('')
         try {
             await api.post(`/api/v1/repayments/${payment.id}/reverse`, { reason })
-            onDone('Payment undone. The original stays on the record.')
         } catch (err) {
             setError(describeError(err))
             setBusy(false)
@@ -24,7 +23,6 @@ export default function ReverseSheet({ payment, onClose, onDone }) {
 
     return (
         <Sheet
-            title="Undo this payment?"
             onClose={onClose}
             footer={
                 <>
@@ -32,7 +30,6 @@ export default function ReverseSheet({ payment, onClose, onDone }) {
                         Keep payment
                     </Button>
                     <Button variant="danger" type="submit" form="reverse-payment" busy={busy} disabled={reason.trim().length < 3}>
-                        Undo payment
                     </Button>
                 </>
             }

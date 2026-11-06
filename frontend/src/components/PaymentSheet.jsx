@@ -89,16 +89,6 @@ export default function PaymentSheet({ loan, onClose, onDone }) {
                     </div>
                 )}
                 <Field label="Amount (KES)" hint={`Still owed today: ${formatMoney(loan.outstanding.total)}`}>
-                    <input
-                        type="number"
-                        inputMode="decimal"
-                        min={Math.min(1, loan.outstanding.total)}
-                        max={loan.outstanding.total}
-                        step="any"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        required
-                    />
                 </Field>
                 <div style={{ margin: '-10px 0 18px' }}>
                     <Button
@@ -124,7 +114,6 @@ export default function PaymentSheet({ loan, onClose, onDone }) {
                         ))}
                     </select>
                 </Field>
-                <Field label="Receipt or reference (optional)" hint="An M-Pesa code or bank reference.">
                     <input value={reference} onChange={(e) => setReference(e.target.value)} maxLength={100} autoComplete="off" />
                 </Field>
 
