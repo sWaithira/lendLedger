@@ -11,14 +11,11 @@ const METHODS = [
 ]
 const COMPONENT_LABEL = { PENALTY: 'Penalty', INTEREST: 'Interest', PRINCIPAL: 'Principal' }
 
-/** Record a payment. The server shows how it will be split before anything is saved. */
 export default function PaymentSheet({ loan, onClose, onDone }) {
     const [amount, setAmount] = useState('')
     const [paymentDate, setPaymentDate] = useState(todayIso())
     const [method, setMethod] = useState('CASH')
     const [reference, setReference] = useState('')
-    // One key per open sheet: pressing Save twice, or retrying after a dropped connection, can never
-    // record the same payment twice (the server replays the original result instead).
     const [idempotencyKey] = useState(() => crypto.randomUUID())
     const [result, setResult] = useState({ key: '', preview: null, error: '' })
     const [error, setError] = useState('')
@@ -89,6 +86,15 @@ export default function PaymentSheet({ loan, onClose, onDone }) {
                     </div>
                 )}
                 <Field label="Amount (KES)" hint={`Still owed today: ${formatMoney(loan.outstanding.total)}`}>
+                    <input
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        required
+                        autoFocus
+                    />
                 </Field>
                 <div style={{ margin: '-10px 0 18px' }}>
                     <Button
@@ -114,6 +120,7 @@ export default function PaymentSheet({ loan, onClose, onDone }) {
                         ))}
                     </select>
                 </Field>
+                <Field label="Reference (optional)" hint="e.g. M-Pesa code">
                     <input value={reference} onChange={(e) => setReference(e.target.value)} maxLength={100} autoComplete="off" />
                 </Field>
 
