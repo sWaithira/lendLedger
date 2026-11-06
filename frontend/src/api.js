@@ -28,7 +28,7 @@ async function request(method, path, { json, form, formData, headers: extra } = 
 
     if (method !== 'GET') {
         // Spring sets the XSRF-TOKEN cookie on any response; make sure we have one before the first write.
-        if (!xsrfToken()) await fetch('/api/v1/me', { credentials: 'same-origin' }).catch(() => {})
+        if (!xsrfToken()) await fetch('/api/v1/me', { credentials: 'include' }).catch(() => {})
         headers['X-XSRF-TOKEN'] = xsrfToken()
     }
     if (json !== undefined) {
@@ -46,7 +46,7 @@ async function request(method, path, { json, form, formData, headers: extra } = 
 
     let res
     try {
-        res = await fetch(path, { method, headers, body, credentials: 'same-origin' })
+        res = await fetch(path, { method, headers, body, credentials: 'include' })
     } catch {
         throw new ApiError(0, null)
     }

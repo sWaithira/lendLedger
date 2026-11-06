@@ -1,6 +1,7 @@
 package com.lendLedger.backend.security;
 
 import java.io.IOException;
+import java.util.List;
 
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -18,11 +19,10 @@ import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-/**
- * ADR-06: HttpOnly session cookie plus CSRF token for the same-origin SPA.
- * The SPA reads the XSRF-TOKEN cookie and sends it back in the X-XSRF-TOKEN header on every write.
- */
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
@@ -35,6 +35,7 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, JdbcClient jdbc) throws Exception {
         http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers("/error", "/dev-login", "/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/rules/preview").permitAll()
@@ -50,7 +51,6 @@ public class SecurityConfig {
                         .usernameParameter("email")
                         .passwordParameter("password")
                         .successHandler((req, res, auth) -> writeJson(res, 200, "{\"status\":\"ok\"}"))
-                        // One message for wrong password, unknown email and locked account.
                         .failureHandler((req, res, ex) -> writeJson(res, 401, "{\"error\":\"invalid_credentials\"}")))
                 .logout(logout -> logout
                         .logoutUrl("/api/v1/auth/logout")
@@ -58,6 +58,24 @@ public class SecurityConfig {
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)));
         return http.build();
+    }
+
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+
+        config.setAllowedOrigins(List.of("https://lend-ledger-iota.vercel.app"));
+
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+
+        // CRITICAL: This allows the browser to send cookies across domains
+        config.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 
     private static void writeJson(HttpServletResponse res, int status, String body) throws IOException {
