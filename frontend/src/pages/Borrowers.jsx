@@ -205,8 +205,8 @@ function NewBorrowerSheet({ onClose, onCreated }) {
                 <Field label="Email (optional)" hint="Lets you email them when a payment is late.">
                     <input type="email" value={form.email} onChange={set('email')} maxLength={200} autoComplete="off" />
                 </Field>
-                <Field label="ID number (optional)" hint="Stored as entered. It is not verified.">
-                    <input value={form.nationalId} onChange={set('nationalId')} maxLength={40} autoComplete="off" />
+                <Field label="ID number">
+                    <input required value={form.nationalId} onChange={set('nationalId')} maxLength={40} autoComplete="off" />
                 </Field>
                 <Field label="Note (optional)">
                     <textarea value={form.note} onChange={set('note')} maxLength={1000} />
