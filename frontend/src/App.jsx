@@ -10,12 +10,51 @@ import Dashboard from './pages/Dashboard.jsx'
 import Performance from './pages/Performance.jsx'
 import Platform from './pages/Platform.jsx'
 import Profile from './pages/Profile.jsx'
+import Reports from './pages/Reports.jsx'
 import Overdue from './pages/Overdue.jsx'
 import Borrowers from './pages/Borrowers.jsx'
 import BorrowerDetail from './pages/BorrowerDetail.jsx'
 import Loans from './pages/Loans.jsx'
 import LoanNew from './pages/LoanNew.jsx'
 import LoanDetail from './pages/LoanDetail.jsx'
+
+const LABELS = {
+    dashboard: 'Overview',
+    borrowers: 'Borrowers',
+    loans: 'Loans',
+    overdue: 'Overdue',
+    performance: 'Performance',
+    reports: 'Reports',
+    settings: 'Settings',
+    import: 'Import from Excel',
+    profile: 'Profile',
+    platform: 'Platform',
+}
+// These pages are reached from the Profile page.
+const PARENT = { settings: 'profile', import: 'profile', reports: 'profile' }
+
+/** The top bar: where you are. Only shown where there is no back link already. */
+function Breadcrumbs() {
+    const { pathname } = useLocation()
+    const parts = pathname.split('/').filter(Boolean)
+    const first = parts[0] || 'dashboard'
+    if (!PARENT[first]) return null
+    const trail = [
+        { label: LABELS[PARENT[first]], to: `/${PARENT[first]}` },
+        { label: LABELS[first] || 'Page', to: `/${first}` },
+    ]
+    return (
+        <nav className="crumbs" aria-label="Breadcrumb">
+            <ol>
+                {trail.map((c, i) => (
+                    <li key={c.label}>
+                        {i < trail.length - 1 ? <Link to={c.to}>{c.label}</Link> : <span aria-current="page">{c.label}</span>}
+                    </li>
+                ))}
+            </ol>
+        </nav>
+    )
+}
 
 function Shell() {
     const { user, logout, can } = useAuth()
@@ -26,21 +65,18 @@ function Shell() {
                 <div className="brand">LendLedger</div>
                 <nav className="nav" aria-label="Main">
                     {platform ? (
-                        <NavLink to="/platform">
-                            <Icon name="gear" /> Platform
-                        </NavLink>
+                        <>
+                            <NavLink to="/platform">
+                                <Icon name="gear" /> Platform
+                            </NavLink>
+                            <NavLink to="/profile">
+                                <Icon name="user" /> Profile
+                            </NavLink>
+                        </>
                     ) : (
                         <>
                             <NavLink to="/dashboard">
                                 <Icon name="chart" /> Overview
-                            </NavLink>
-                            {can('REPORT_VIEW') && (
-                                <NavLink className="nav-desktop" to="/performance">
-                                    <Icon name="chart" /> Performance
-                                </NavLink>
-                            )}
-                            <NavLink to="/overdue">
-                                <Icon name="alert" /> Overdue
                             </NavLink>
                             <NavLink to="/borrowers">
                                 <Icon name="people" /> Borrowers
@@ -48,26 +84,32 @@ function Shell() {
                             <NavLink to="/loans">
                                 <Icon name="loans" /> Loans
                             </NavLink>
-                            {can('SETTINGS_MANAGE') && (
-                                <NavLink className="nav-desktop" to="/settings">
-                                    <Icon name="gear" /> Settings
+                            <NavLink to="/overdue">
+                                <Icon name="alert" /> Overdue
+                            </NavLink>
+                            {can('REPORT_VIEW') && (
+                                <NavLink className="nav-desktop" to="/performance">
+                                    <Icon name="chart" /> Performance
                                 </NavLink>
                             )}
-                            <NavLink className="nav-more" to="/profile">
+                            <NavLink to="/profile">
                                 <Icon name="user" /> Profile
                             </NavLink>
                         </>
                     )}
                 </nav>
                 <div className="me">
-                    <Link to="/profile"><strong>{user.name}</strong></Link>
+                    <Link to="/profile">
+                        <strong>{user.name}</strong>
+                    </Link>
                     <small>{ROLE_LABEL[user.role] || user.role}</small>
-                    <button className="btn plain" type="button" onClick={logout}>
+                    <button className="btn plain me-signout" type="button" onClick={logout}>
                         Sign out
                     </button>
                 </div>
             </aside>
             <main className="content">
+                <Breadcrumbs />
                 <Outlet />
             </main>
         </div>
@@ -120,6 +162,8 @@ export default function App() {
                 <Route path="loans/:id" element={<LoanDetail />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="import" element={<ImportData />} />
+                <Route path="reports" element={<Reports />} />
+                <Route path="more" element={<Navigate to="/profile" replace />} />
                 <Route path="profile" element={<Profile />} />
                 <Route path="platform" element={<Platform />} />
             </Route>

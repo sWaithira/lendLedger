@@ -438,3 +438,11 @@ html, body { max-width: 100%; overflow-x: clip; }
 .pw-rules li.ok i { background: currentColor; }
 .me a { color: var(--text); text-decoration: none; }
 .me .me-signout { justify-self: start; padding: 0; min-height: 32px; }
+
+/* layout fixes 2: short pages must not stretch the phone header; product cards on phones */
+@media (max-width: 860px) {
+  .shell { grid-template-rows: auto minmax(0, 1fr); align-content: start; }
+  .product-summary { flex-wrap: wrap; row-gap: 4px; }
+  .product-summary > .product-name { flex: 1; min-width: 0; }
+  .product-summary > .muted { order: 5; flex: 1 0 100%; }
+}
