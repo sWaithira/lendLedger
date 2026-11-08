@@ -5,6 +5,7 @@ import java.util.List;
 
 import jakarta.servlet.http.HttpServletResponse;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -23,9 +24,20 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+/**
+ * ADR-06: HttpOnly session cookie plus CSRF token for the same-origin SPA.
+ * The SPA reads the XSRF-TOKEN cookie and sends it back in the X-XSRF-TOKEN header on every write.
+ * CORS only lists the sites allowed to call the API with cookies: localhost in development, the Vercel site in production.
+ */
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
+
+    private final List<String> allowedOrigins;
+
+    SecurityConfig(@Value("${lendledger.cors.allowed-origins:http://localhost:5173,http://localhost:4173}") List<String> allowedOrigins) {
+        this.allowedOrigins = allowedOrigins;
+    }
 
     @Bean
     PasswordEncoder passwordEncoder() {
@@ -51,6 +63,7 @@ public class SecurityConfig {
                         .usernameParameter("email")
                         .passwordParameter("password")
                         .successHandler((req, res, auth) -> writeJson(res, 200, "{\"status\":\"ok\"}"))
+                        // One message for wrong password, unknown email and locked account.
                         .failureHandler((req, res, ex) -> writeJson(res, 401, "{\"error\":\"invalid_credentials\"}")))
                 .logout(logout -> logout
                         .logoutUrl("/api/v1/auth/logout")
@@ -60,17 +73,12 @@ public class SecurityConfig {
         return http.build();
     }
 
-
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-
-        config.setAllowedOrigins(List.of("https://lend-ledger-iota.vercel.app"));
-
+        config.setAllowedOrigins(allowedOrigins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
-
-        // CRITICAL: This allows the browser to send cookies across domains
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
