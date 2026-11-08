@@ -446,3 +446,6 @@ html, body { max-width: 100%; overflow-x: clip; }
   .product-summary > .product-name { flex: 1; min-width: 0; }
   .product-summary > .muted { order: 5; flex: 1 0 100%; }
 }
+
+/* a disabled button stays readable */
+.btn.danger:disabled, .btn.secondary:disabled { opacity: 1; background: var(--fill); color: var(--text-2); }

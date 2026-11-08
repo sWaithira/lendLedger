@@ -123,11 +123,6 @@ export default function Profile() {
                             Change password
                         </Button>
                     </form>
-                    <div className="profile-signout">
-                        <Button variant="secondary" onClick={logout}>
-                            Sign out
-                        </Button>
-                    </div>
                 </div>
             </Section>
 
@@ -146,6 +141,11 @@ export default function Profile() {
                     ))}
                 </Section>
             )}
+            <div className="profile-signout">
+                <Button variant="secondary" onClick={logout}>
+                    Sign out
+                </Button>
+            </div>
         </>
     )
 }

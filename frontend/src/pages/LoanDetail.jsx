@@ -153,7 +153,7 @@ export default function LoanDetail() {
                                     </div>
                                     {can('REPAYMENT_REVERSE') && p.id === reversibleId && p.method !== 'ROLLOVER' && (
                                         <Button variant="danger" onClick={() => setReversing(p)}>
-                                            Reverse
+                                            Undo payment
                                         </Button>
                                     )}
                                 </div>
