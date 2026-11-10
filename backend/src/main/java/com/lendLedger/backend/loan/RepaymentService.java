@@ -1,6 +1,7 @@
 package com.lendLedger.backend.loan;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -41,7 +42,7 @@ public class RepaymentService {
     private record Plan(List<AssessedCharge> charges, Outstanding before, List<Allocation> allocations, Outstanding after) { }
 
     private record Raw(LocalDate date, int rank, long tie, String type, String description,
-                       BigDecimal signedAmount, UUID repaymentId) { }
+                       BigDecimal signedAmount, UUID repaymentId, Instant at) { }
 
     private final LoanRepository loans;
     private final RepaymentRepository repayments;
@@ -184,14 +185,14 @@ public class RepaymentService {
         LoanTerms terms = loan.terms();
 
         List<Raw> raw = new ArrayList<>();
-        raw.add(new Raw(loan.issueDate(), 0, 0, "LOAN_ISSUED", "Loan issued", loan.principal(), null));
+        raw.add(new Raw(loan.issueDate(), 0, 0, "LOAN_ISSUED", "Loan issued", loan.principal(), null, null));
 
         for (AssessedCharge c : ChargeAssessor.assess(terms, view.asOf())) {
             String what = c.type() == ChargeType.INTEREST ? "Interest" : "Penalty";
             String when = c.kind() == PeriodKind.TERM ? "term" : "overdue";
             long tie = c.periodNumber() * 2L + (c.type() == ChargeType.PENALTY ? 1 : 0);
             raw.add(new Raw(c.effectiveDate(), 1, tie, c.type().name(),
-                    what + ", " + when + " period " + c.periodNumber(), c.amount(), null));
+                    what + ", " + when + " period " + c.periodNumber(), c.amount(), null, null));
         }
 
         List<RepaymentRow> rows = repayments.listByLoan(tenantId, loanId);
@@ -203,16 +204,20 @@ public class RepaymentService {
                     .collect(Collectors.joining(", "));
             raw.add(new Raw(r.paymentDate(), 2, tie++, "PAYMENT",
                     "Payment by " + r.method() + (split.isEmpty() ? "" : " (" + split + ")"),
-                    r.amount().negate(), r.id()));
+                    r.amount().negate(), r.id(), r.recordedAt()));
             if (r.reversedAt() != null) {
                 LocalDate reversedOn = r.reversedAt().atZone(clock.zone()).toLocalDate();
                 if (reversedOn.isBefore(r.paymentDate())) reversedOn = r.paymentDate();
                 raw.add(new Raw(reversedOn, 3, tie++, "REVERSAL",
-                        "Payment reversed: " + r.reversalReason(), r.amount(), r.id()));
+                        "Payment reversed: " + r.reversalReason(), r.amount(), r.id(), r.reversedAt()));
             }
         }
 
-        raw.sort(Comparator.comparing(Raw::date).thenComparingInt(Raw::rank).thenComparingLong(Raw::tie));
+        // Same day: the loan and its charges first, then payments and reversals in the order they really happened.
+        raw.sort(Comparator.comparing(Raw::date)
+                .thenComparingInt(e -> e.rank() >= 2 ? 2 : e.rank())
+                .thenComparing(Raw::at, Comparator.nullsFirst(Comparator.<Instant>naturalOrder()))
+                .thenComparingLong(Raw::tie));
         List<RepaymentDtos.StatementEntry> entries = new ArrayList<>();
         BigDecimal balance = BigDecimal.ZERO;
         for (Raw e : raw) {
