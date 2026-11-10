@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react'
 import { api, describeError } from '../api.js'
-import { formatDate, todayIso } from '../format.js'
+import { formatDate } from '../format.js'
 import { useFetch } from '../hooks.js'
 import { shrinkImage } from '../imageResize.js'
-import { Badge, Button, ErrorNote, Field, Loading } from './ui.jsx'
+import { Badge, Button, ErrorNote, Loading } from './ui.jsx'
 
 const STATUS = {
     NONE: { label: 'No ID photos', tone: 'gray' },
@@ -19,7 +19,6 @@ export default function IdPhotos({ borrowerId, canWrite }) {
     const [busy, setBusy] = useState('')
     const [message, setMessage] = useState('')
     const [removing, setRemoving] = useState('')
-    const [consent, setConsent] = useState(null)
     const frontRef = useRef(null)
     const backRef = useRef(null)
     const refs = { FRONT: frontRef, BACK: backRef }
@@ -53,7 +52,6 @@ export default function IdPhotos({ borrowerId, canWrite }) {
     if (!data) return <Loading rows={1} />
 
     const status = STATUS[data.status] || STATUS.NONE
-    const consentValue = consent ?? data.consentOn ?? ''
 
     return (
         <div className="card">
@@ -138,26 +136,6 @@ export default function IdPhotos({ borrowerId, canWrite }) {
                     </Button>
                 </div>
             )}
-
-            <div style={{ marginTop: 20 }}>
-                {canWrite ? (
-                    <>
-                        <Field label="Consent on file since" hint="The date the borrower agreed on the loan application.">
-                            <input type="date" max={todayIso()} value={consentValue} onChange={(e) => setConsent(e.target.value)} />
-                        </Field>
-                        <Button
-                            variant="secondary"
-                            busy={busy === 'consent'}
-                            disabled={consentValue === (data.consentOn || '')}
-                            onClick={() => run('consent', () => api.post(`${base}/consent`, { consentOn: consentValue || null }))}
-                        >
-                            Save consent date
-                        </Button>
-                    </>
-                ) : (
-                    data.consentOn && <p className="muted">Consent on file since {formatDate(data.consentOn)}</p>
-                )}
-            </div>
         </div>
     )
 }

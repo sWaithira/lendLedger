@@ -1,7 +1,8 @@
 import { Link, Navigate, NavLink, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { useAuth } from './auth.jsx'
 import { Icon } from './components/ui.jsx'
-import { ROLE_LABEL } from './format.js'
+import { DEMO_WHATSAPP } from './contact.js'
+import { ROLE_LABEL, formatDate } from './format.js'
 import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
 import Settings from './pages/Settings.jsx'
@@ -109,6 +110,16 @@ function Shell() {
                 </div>
             </aside>
             <main className="content">
+                {user.readOnly && (
+                    <div className="notice warn" role="status">
+                        Your subscription ended on {formatDate(user.subscriptionEndedOn)}. You can still view and download your data, but changes are switched off.{' '}
+                        {DEMO_WHATSAPP && (
+                            <a href={`https://wa.me/${DEMO_WHATSAPP}?text=${encodeURIComponent('Hello, I would like to renew my LendLedger subscription.')}`} target="_blank" rel="noreferrer">
+                                Contact us to renew
+                            </a>
+                        )}
+                    </div>
+                )}
                 <Breadcrumbs />
                 <Outlet />
             </main>
