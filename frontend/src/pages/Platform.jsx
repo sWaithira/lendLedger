@@ -20,6 +20,7 @@ export default function Platform() {
     const [creating, setCreating] = useState(false)
     const [query, setQuery] = useState('')
     const [filter, setFilter] = useState('all')
+    const [in14] = useState(() => new Date(Date.now() + 14 * 86400000).toLocaleDateString('en-CA'))
     const [notice, setNotice] = useState('')
 
     function done(message) {
@@ -33,7 +34,6 @@ export default function Platform() {
     const lenders = data || []
     const today = todayIso()
     const expired = (l) => Boolean(l.subscriptionExpiresOn) && l.subscriptionExpiresOn < today
-    const in14 = new Date(Date.now() + 14 * 86400000).toLocaleDateString('en-CA')
     const soon = (l) => Boolean(l.subscriptionExpiresOn) && l.subscriptionExpiresOn >= today && l.subscriptionExpiresOn <= in14
     const suspended = lenders.filter((l) => l.status === 'SUSPENDED').length
     const lapsed = lenders.filter((l) => l.status === 'ACTIVE' && expired(l)).length
