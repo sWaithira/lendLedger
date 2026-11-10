@@ -1,5 +1,6 @@
 package com.lendLedger.backend.account;
 
+import java.time.LocalDate;
 import java.util.Map;
 import java.util.UUID;
 
@@ -28,7 +29,9 @@ class AccountService {
 
     @Transactional(readOnly = true)
     AccountDtos.Status status() {
-        return new AccountDtos.Status(repo.mustChange(CurrentUser.tenantId(), CurrentUser.userId()));
+        UUID tenantId = CurrentUser.tenantId();
+        LocalDate ended = repo.endedOn(tenantId).orElse(null);
+        return new AccountDtos.Status(repo.mustChange(tenantId, CurrentUser.userId()), ended != null, ended);
     }
 
     @Transactional

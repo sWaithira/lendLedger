@@ -15,7 +15,7 @@ public final class BorrowerDtos {
             @NotBlank(message = "Name is required") @Size(max = 200, message = "Name is too long") String fullName,
             @NotBlank(message = "Phone is required") @Size(max = 30, message = "Phone is too long") String phone,
             @Email(message = "Enter a valid email address") @Size(max = 200, message = "Email is too long") String email,
-            @Size(max = 40, message = "ID number is too long") String nationalId,
+            @NotBlank(message = "ID number is required") @Size(max = 40, message = "ID number is too long") String nationalId,
             @Size(max = 1000, message = "Note is too long") String note,
             @Size(max = 500, message = "Reason is too long") String duplicateReason) { }
 
@@ -23,7 +23,7 @@ public final class BorrowerDtos {
             @NotBlank(message = "Name is required") @Size(max = 200, message = "Name is too long") String fullName,
             @NotBlank(message = "Phone is required") @Size(max = 30, message = "Phone is too long") String phone,
             @Email(message = "Enter a valid email address") @Size(max = 200, message = "Email is too long") String email,
-            @Size(max = 40, message = "ID number is too long") String nationalId,
+            @NotBlank(message = "ID number is required") @Size(max = 40, message = "ID number is too long") String nationalId,
             @Size(max = 1000, message = "Note is too long") String note) { }
 
     public record Response(UUID id, String fullName, String phone, String email, String nationalId, String kycStatus,

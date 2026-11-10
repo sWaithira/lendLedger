@@ -206,7 +206,8 @@ public class ImportService {
             else if (name.length() > 200) problems.add("Name is too long");
             String norm = normalizeOrNull(phone, problems);
             if (!email.isEmpty() && (email.length() > 200 || !EMAIL.matcher(email).matches())) problems.add("Email is not valid");
-            if (nationalId.length() > 40) problems.add("ID number is too long");
+            if (nationalId.isEmpty()) problems.add("ID number is required");
+            else if (nationalId.length() > 40) problems.add("ID number is too long");
             if (note.length() > 1000) problems.add("Note is too long");
             if (!problems.isEmpty()) {
                 plan.add("Borrowers", r.number(), label, "ERROR", String.join(". ", problems));

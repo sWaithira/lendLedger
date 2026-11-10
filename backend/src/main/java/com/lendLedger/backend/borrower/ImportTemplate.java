@@ -41,6 +41,7 @@ final class ImportTemplate {
             String[] lines = {
                     "One row per borrower on the Borrowers sheet and one row per loan on the Loans sheet. Keep row 1 as it is.",
                     "Phone: a Kenyan number such as 0712345678 or +254712345678.",
+                    "ID number: required for every new borrower. Add the ID photos in the app afterwards.",
                     "A loan finds its borrower by Borrower phone. The borrower can be on the Borrowers sheet or already in LendLedger.",
                     "Amount: a number, for example 3223 or 3223.50.",
                     "Issue date: 2026-10-01 (year-month-day) or 01/10/2026. Leave it empty to use today's date. It cannot be in the future.",
