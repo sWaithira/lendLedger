@@ -15,7 +15,7 @@ public final class PlatformDtos {
     /** Lender metadata and counts only. Never borrower, loan or payment details. */
     public record LenderRow(UUID id, String name, String status, String plan, LocalDate subscriptionExpiresOn,
                             Instant createdAt, String ownerName, String ownerEmail, long borrowers, long loans,
-                            Instant lastLoginAt) { }
+                            Instant lastLoginAt, long idPhotos, long idPhotoBytes) { }
 
     public record ReasonRequest(@Size(max = 300, message = "Reason is too long") String reason) { }
 

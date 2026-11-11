@@ -8,7 +8,7 @@ async function loadUser() {
     const me = await api.get('/api/v1/me')
     try {
         const account = await api.get('/api/v1/account')
-        return { ...me, mustChangePassword: Boolean(account.mustChangePassword) }
+        return { ...me, mustChangePassword: Boolean(account.mustChangePassword), readOnly: Boolean(account.readOnly), subscriptionEndedOn: account.subscriptionEndedOn || null }
     } catch {
         return { ...me, mustChangePassword: false }
     }

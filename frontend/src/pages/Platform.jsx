@@ -18,6 +18,9 @@ export default function Platform() {
     const { data, error, loading, reload } = useFetch(allowed ? '/api/v1/platform/lenders' : null)
     const [managing, setManaging] = useState(null)
     const [creating, setCreating] = useState(false)
+    const [query, setQuery] = useState('')
+    const [filter, setFilter] = useState('all')
+    const [in14] = useState(() => new Date(Date.now() + 14 * 86400000).toLocaleDateString('en-CA'))
     const [notice, setNotice] = useState('')
 
     function done(message) {
@@ -31,9 +34,20 @@ export default function Platform() {
     const lenders = data || []
     const today = todayIso()
     const expired = (l) => Boolean(l.subscriptionExpiresOn) && l.subscriptionExpiresOn < today
+    const soon = (l) => Boolean(l.subscriptionExpiresOn) && l.subscriptionExpiresOn >= today && l.subscriptionExpiresOn <= in14
     const suspended = lenders.filter((l) => l.status === 'SUSPENDED').length
     const lapsed = lenders.filter((l) => l.status === 'ACTIVE' && expired(l)).length
     const active = lenders.length - suspended - lapsed
+    const q = query.trim().toLowerCase()
+    const matchesFilter = (l) =>
+        filter === 'all' ||
+        (filter === 'suspended' && l.status === 'SUSPENDED') ||
+        (filter === 'expired' && l.status === 'ACTIVE' && expired(l)) ||
+        (filter === 'soon' && l.status === 'ACTIVE' && soon(l)) ||
+        (filter === 'active' && l.status === 'ACTIVE' && !expired(l))
+    const visible = lenders
+        .filter((l) => matchesFilter(l) && (!q || `${l.name} ${l.ownerName || ''} ${l.ownerEmail || ''}`.toLowerCase().includes(q)))
+        .sort((a, b) => (filter === 'soon' ? String(a.subscriptionExpiresOn).localeCompare(String(b.subscriptionExpiresOn)) : 0))
 
     return (
         <>
@@ -70,19 +84,34 @@ export default function Platform() {
                         </div>
                     </div>
 
+                    {lenders.length > 0 && (
+                        <div className="toolbar">
+                            <input className="search grow" type="search" placeholder="Search lenders" aria-label="Search lenders" value={query} onChange={(e) => setQuery(e.target.value)} />
+                            <select aria-label="Show" style={{ width: 'auto' }} value={filter} onChange={(e) => setFilter(e.target.value)}>
+                                <option value="all">All lenders</option>
+                                <option value="active">Active</option>
+                                <option value="soon">Expiring in 14 days</option>
+                                <option value="expired">Expired</option>
+                                <option value="suspended">Suspended</option>
+                            </select>
+                        </div>
+                    )}
+                    {lenders.length > 0 && visible.length === 0 && <p className="muted">No lenders match.</p>}
                     {lenders.length === 0 && (
                         <div className="list">
                             <Empty title="No lenders yet">Add your first lender to get started.</Empty>
                         </div>
                     )}
                     <div className="list">
-                        {lenders.map((l) => {
+                        {visible.map((l) => {
                             const isExpired = l.status === 'ACTIVE' && expired(l)
                             const state =
                                 l.status === 'SUSPENDED'
                                     ? { label: 'Suspended', tone: 'red' }
                                     : isExpired
-                                        ? { label: 'Expired', tone: 'orange' }
+                                        ? { label: 'Read-only (expired)', tone: 'orange' }
+                                        : soon(l)
+                                        ? { label: 'Expiring soon', tone: 'orange' }
                                         : { label: 'Active', tone: 'green' }
                             return (
                                 <div key={l.id} className="row static">
@@ -94,7 +123,7 @@ export default function Platform() {
                                         </div>
                                         <div className="sub">
                                             {PLAN_LABEL[l.plan] || l.plan} · {l.subscriptionExpiresOn ? `Expires ${formatDate(l.subscriptionExpiresOn)}` : 'No expiry'} ·{' '}
-                                            {l.lastLoginAt ? `Last sign-in ${formatDate(l.lastLoginAt.slice(0, 10))}` : 'Never signed in'}
+                                            {l.lastLoginAt ? `Last sign-in ${formatDate(l.lastLoginAt.slice(0, 10))}` : 'Never signed in'} · {l.idPhotos} ID photo{l.idPhotos === 1 ? '' : 's'} ({(l.idPhotoBytes / 1048576).toFixed(1)} MB)
                                         </div>
                                     </div>
                                     <Badge tone={state.tone}>{state.label}</Badge>

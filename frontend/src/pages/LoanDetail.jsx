@@ -4,9 +4,11 @@ import { useAuth } from '../auth.jsx'
 import PaymentSheet from '../components/PaymentSheet.jsx'
 import ReverseSheet from '../components/ReverseSheet.jsx'
 import RolloverSheet from '../components/RolloverSheet.jsx'
+import ShareSheet from '../components/ShareSheet.jsx'
 import { Badge, Button, Empty, ErrorNote, Loading, PageHead, StatusBadge } from '../components/ui.jsx'
 import { formatDate, formatMoney, loanNumber, percent } from '../format.js'
 import { useFetch } from '../hooks.js'
+import { receiptText, statementText } from '../receipt.js'
 
 const COMPONENT_LABEL = { PENALTY: 'Penalty', INTEREST: 'Interest', PRINCIPAL: 'Principal' }
 const METHOD_LABEL = { CASH: 'Cash', MPESA_MANUAL: 'M-Pesa', BANK: 'Bank transfer', MANUAL: 'Other', ROLLOVER: 'Rolled over' }
@@ -17,11 +19,15 @@ export default function LoanDetail() {
     const loan = useFetch(`/api/v1/loans/${id}`)
     const payments = useFetch(`/api/v1/loans/${id}/repayments`)
     const statement = useFetch(`/api/v1/loans/${id}/statement`)
+    const links = useFetch(`/api/v1/loans/${id}/rollover-links`)
     const [paying, setPaying] = useState(false)
     const [reversing, setReversing] = useState(null)
     const [rolling, setRolling] = useState(false)
-    const links = useFetch(`/api/v1/loans/${id}/rollover-links`)
+    const [sharing, setSharing] = useState(null)
     const [notice, setNotice] = useState('')
+
+    const l = loan.data
+    const borrower = useFetch(l ? `/api/v1/borrowers/${l.borrowerId}` : null)
 
     function done(message) {
         setPaying(false)
@@ -32,9 +38,8 @@ export default function LoanDetail() {
         statement.reload()
     }
 
-    const l = loan.data
     const items = payments.data || []
-    // Only the latest payment that still stands can be reversed (the server enforces this too).
+    // Only the latest payment that still stands can be undone (the server enforces this too).
     const reversibleId = [...items].reverse().find((p) => !p.reversed)?.id
     // Rolling over needs at least one standing cash payment (the server checks the interest is fully paid).
     const lastStanding = [...items].reverse().find((p) => !p.reversed && p.method !== 'ROLLOVER')
@@ -69,14 +74,14 @@ export default function LoanDetail() {
                         subtitle={`${loanNumber(l.loanNumber)} · ${l.borrowerName} · ${l.productName} · Issued ${formatDate(l.issueDate)}`}
                         actions={
                             <span className="head-actions">
-                <StatusBadge status={l.displayStatus} />
+                                <StatusBadge status={l.displayStatus} />
                                 {can('REPAYMENT_POST') && l.status === 'ACTIVE' && <Button onClick={() => setPaying(true)}>Record payment</Button>}
                                 {can('LOAN_CREATE') && l.status === 'ACTIVE' && l.outstanding.principal > 0 && lastStanding && (
                                     <Button variant="secondary" onClick={() => setRolling(true)}>
                                         Roll over principal
                                     </Button>
                                 )}
-              </span>
+                            </span>
                         }
                     />
 
@@ -112,15 +117,14 @@ export default function LoanDetail() {
                                 {l.termPeriods} month{l.termPeriods === 1 ? '' : 's'}
                             </dd>
                             <dt>Interest</dt>
-                            <dd>{percent(l.ratePerPeriod)}{l.interestOnce ? ', charged once' : ' per month'}</dd>
+                            <dd>
+                                {percent(l.ratePerPeriod)}
+                                {l.interestOnce ? ', charged once' : ' per month'}
+                            </dd>
                             {l.daysOverdue > 0 && (
                                 <>
                                     <dt>Overdue</dt>
-                                    <dd>
-                                        {l.penaltyMonth > 0
-                                            ? `Month ${l.penaltyMonth + 1} · due ${formatDate(l.dueDate)}`
-                                            : `${l.daysOverdue} days`}
-                                    </dd>
+                                    <dd>{l.penaltyMonth > 0 ? `Month ${l.penaltyMonth + 1} · due ${formatDate(l.dueDate)}` : `${l.daysOverdue} days`}</dd>
                                 </>
                             )}
                         </dl>
@@ -140,17 +144,29 @@ export default function LoanDetail() {
                                 <div key={p.id} className="row static">
                                     <div className="grow">
                                         <div className="title money">
-                                            {formatMoney(p.amount)} {p.reversed && <Badge tone="gray">Reversed</Badge>}
+                                            {formatMoney(p.amount)} {p.reversed && <Badge tone="gray">Undone</Badge>}
                                         </div>
                                         <div className="sub">
                                             {formatDate(p.paymentDate)} · {METHOD_LABEL[p.method] || p.method}
                                             {p.reference ? ` · ${p.reference}` : ''}
                                         </div>
-                                        <div className="sub">
-                                            {p.allocations.map((a) => `${COMPONENT_LABEL[a.component]} ${formatMoney(a.amount)}`).join(' · ')}
-                                        </div>
-                                        {p.reversed && <div className="sub">Reversed: {p.reversalReason}</div>}
+                                        <div className="sub">{p.allocations.map((a) => `${COMPONENT_LABEL[a.component]} ${formatMoney(a.amount)}`).join(' · ')}</div>
+                                        {p.reversed && <div className="sub">Undone: {p.reversalReason}</div>}
                                     </div>
+                                    {!p.reversed && p.method !== 'ROLLOVER' && (
+                                        <Button
+                                            variant="secondary"
+                                            onClick={() =>
+                                                setSharing({
+                                                    title: 'Send receipt',
+                                                    subject: `Payment receipt ${loanNumber(l.loanNumber)}`,
+                                                    text: receiptText(l, p, METHOD_LABEL[p.method] || p.method, p.id === reversibleId),
+                                                })
+                                            }
+                                        >
+                                            Send receipt
+                                        </Button>
+                                    )}
                                     {can('REPAYMENT_REVERSE') && p.id === reversibleId && p.method !== 'ROLLOVER' && (
                                         <Button variant="danger" onClick={() => setReversing(p)}>
                                             Undo payment
@@ -164,30 +180,46 @@ export default function LoanDetail() {
                     <h2 className="section-title">Statement</h2>
                     <ErrorNote error={statement.error} onRetry={statement.reload} />
                     {statement.loading && !statement.data && <Loading rows={3} />}
+                    {statement.data && statement.data.entries.length > 0 && (
+                        <div style={{ margin: '0 0 12px' }}>
+                            <Button
+                                variant="secondary"
+                                onClick={() =>
+                                    setSharing({
+                                        title: 'Send statement',
+                                        subject: `Loan statement ${loanNumber(l.loanNumber)}`,
+                                        text: statementText(l, statement.data.entries),
+                                    })
+                                }
+                            >
+                                Send statement
+                            </Button>
+                        </div>
+                    )}
                     {statement.data && (
                         <div className="list stmt" role="table" aria-label="Loan statement">
                             <div className="stmt-row stmt-head" role="row">
                                 <span role="columnheader">Date</span>
                                 <span role="columnheader">What happened</span>
                                 <span role="columnheader" className="right">
-                  Amount
-                </span>
+                                    Amount
+                                </span>
                                 <span role="columnheader" className="right">
-                  Balance
-                </span>
+                                    Balance
+                                </span>
                             </div>
                             {statement.data.entries.map((e, i) => (
                                 <div key={i} className="stmt-row" role="row">
-                  <span role="cell" className="num">
-                    {formatDate(e.date)}
-                  </span>
+                                    <span role="cell" className="num">
+                                        {formatDate(e.date)}
+                                    </span>
                                     <span role="cell">{e.description}</span>
                                     <span role="cell" className={`right money ${e.amount < 0 ? 'credit' : ''}`}>
-                    {formatMoney(e.amount)}
-                  </span>
+                                        {formatMoney(e.amount)}
+                                    </span>
                                     <span role="cell" className="right money">
-                    {formatMoney(e.balanceAfter)}
-                  </span>
+                                        {formatMoney(e.balanceAfter)}
+                                    </span>
                                 </div>
                             ))}
                         </div>
@@ -198,6 +230,7 @@ export default function LoanDetail() {
             {paying && <PaymentSheet loan={l} onClose={() => setPaying(false)} onDone={done} />}
             {reversing && <ReverseSheet payment={reversing} onClose={() => setReversing(null)} onDone={done} />}
             {rolling && <RolloverSheet loan={l} defaultDate={lastStanding?.paymentDate} onClose={() => setRolling(false)} />}
+            {sharing && <ShareSheet {...sharing} phone={borrower.data?.phone} email={borrower.data?.email} onClose={() => setSharing(null)} />}
         </>
     )
 }

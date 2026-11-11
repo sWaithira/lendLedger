@@ -449,3 +449,7 @@ html, body { max-width: 100%; overflow-x: clip; }
 
 /* a disabled button stays readable */
 .btn.danger:disabled, .btn.secondary:disabled { opacity: 1; background: var(--fill); color: var(--text-2); }
+
+/* modal backdrop fix: the centred-content rule must not shrink the full-screen backdrop; disabled buttons stay readable */
+.content > .sheet-backdrop { max-width: none; margin: 0; }
+.btn.primary:disabled { opacity: 1; background: var(--fill); color: var(--text-2); }

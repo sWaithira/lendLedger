@@ -35,7 +35,9 @@ class PlatformRepository {
                                 ORDER BY u.created_at LIMIT 1) AS owner_email,
                                (SELECT count(*) FROM borrower b WHERE b.tenant_id = t.id) AS borrowers,
                                (SELECT count(*) FROM loan l WHERE l.tenant_id = t.id) AS loans,
-                               (SELECT max(u.last_login_at) FROM app_user u WHERE u.tenant_id = t.id) AS last_login
+                               (SELECT max(u.last_login_at) FROM app_user u WHERE u.tenant_id = t.id) AS last_login,
+                               (SELECT count(*) FROM borrower_id_image i WHERE i.tenant_id = t.id) AS id_photos,
+                               (SELECT COALESCE(sum(i.size_bytes), 0) FROM borrower_id_image i WHERE i.tenant_id = t.id) AS id_photo_bytes
                         FROM tenant t
                         WHERE NOT t.is_platform
                         ORDER BY t.created_at DESC
@@ -46,7 +48,8 @@ class PlatformRepository {
                         instant(rs.getObject("created_at", OffsetDateTime.class)),
                         rs.getString("owner_name"), rs.getString("owner_email"),
                         rs.getLong("borrowers"), rs.getLong("loans"),
-                        instant(rs.getObject("last_login", OffsetDateTime.class))))
+                        instant(rs.getObject("last_login", OffsetDateTime.class)),
+                        rs.getLong("id_photos"), rs.getLong("id_photo_bytes")))
                 .list();
     }
 

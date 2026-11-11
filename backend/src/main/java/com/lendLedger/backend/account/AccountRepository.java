@@ -1,5 +1,6 @@
 package com.lendLedger.backend.account;
 
+import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -22,6 +23,14 @@ class AccountRepository {
                 .query(Boolean.class)
                 .optional()
                 .orElse(false);
+    }
+
+    /** The date the subscription ended, when it has already passed. Empty for the platform tenant and for lenders in date. */
+    Optional<LocalDate> endedOn(UUID tenantId) {
+        return jdbc.sql("SELECT subscription_expires_on FROM tenant WHERE id = :id AND NOT is_platform AND subscription_expires_on < current_date")
+                .param("id", tenantId)
+                .query((rs, i) -> rs.getObject("subscription_expires_on", LocalDate.class))
+                .optional();
     }
 
     Optional<String> hash(UUID tenantId, UUID userId) {
