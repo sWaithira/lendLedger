@@ -30,6 +30,13 @@ The frontend is deployed on Vercel and uses Vercel rewrites to proxy all `/api/*
 
 Security hardening includes pessimistic database locking for concurrent payments, automated Testcontainers integration tests to prove data isolation and automated GPG-encrypted database backups.
 
+## API Documentation
+
+The backend exposes a fully interactive Swagger UI for testing endpoints and reviewing API contracts.
+
+*   **Live Swagger UI:** https://lendledger-lz0e.onrender.com/swagger-ui/index.html
+*   **Local Swagger UI:** http://localhost:8080/swagger-ui/index.html
+*   **Static OpenAPI Spec:** Available in `docs/openapi.yaml`
 ## Run Locally
 
 **Prerequisites:** Java 21+, Node 20+, and Docker.
